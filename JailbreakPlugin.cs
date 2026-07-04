@@ -1759,6 +1759,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         CCSPlayerPawn victimPawn,
         CTakeDamageInfo damageInfo)
     {
+        // 이 훅은 모든 데미지 이벤트(총알, 화염, 낙하 등)마다 호출됩니다.
+        // LR이 활성일 때만 데미지 차단이 필요하므로, 그 외에는 공격자 리졸브
+        // 같은 비용을 들이지 않고 즉시 통과시켜 틱 부하를 줄입니다.
+        if (_lastRequestManager?.HasActiveGame != true)
+        {
+            return HookResult.Continue;
+        }
+
         CCSPlayerController? victim =
             victimPawn.OriginalController.Value;
 
