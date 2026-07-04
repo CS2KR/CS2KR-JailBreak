@@ -1,0 +1,7 @@
+{
+  "order.menu.location.title": "간수 지시 - 장소 선택",
+  "order.menu.custom": "자유 입력",
+  "order.menu.time.title": "간수 지시 - {0}",
+  "order.menu.time.option": "{0}까지",
+  "order.error.no_permission": "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다."
+}
