@@ -1,0 +1,29 @@
+{
+  "ConfigVersion": 1,
+  "PrisonersPerGuard": 3,
+  "AdminPermissions": [
+    "@jailbreak/admin"
+  ],
+  "CustomOrderInputTimeoutSeconds": 15,
+  "DisableRadar": true,
+  "DisableRadarCommand": "sv_disable_radar 1",
+  "BotsBlockLastRequest": true,
+  "GuardOrders": {
+    "Enabled": true,
+    "RoundDurationSeconds": 480,
+    "TimeStepSeconds": 30,
+    "TimeOptionCount": 5,
+    "MinimumDeadlineSeconds": 30,
+    "CommandCooldownSeconds": 3.0,
+    "HudRefreshSeconds": 0.5,
+    "HudPacketDurationSeconds": 2,
+    "NotificationSound": "UIPanorama.popup_accept",
+    "OrderTextFormat": "{location}로 {time}까지 이동",
+    "DefaultLocations": [
+      "중앙",
+      "수영장",
+      "샤워실",
+      "운동장"
+    ]
+  }
+}
