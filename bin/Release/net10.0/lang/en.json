@@ -1,7 +1,0 @@
-{
-  "order.menu.location.title": "Guard Order - Select Location",
-  "order.menu.custom": "Custom text",
-  "order.menu.time.title": "Guard Order - {0}",
-  "order.menu.time.option": "Until {0}",
-  "order.error.no_permission": "[Jailbreak] Only living guards or authorized administrators can issue orders."
-}
