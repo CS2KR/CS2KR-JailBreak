@@ -826,10 +826,34 @@ public sealed class LastRequestManager
             return;
         }
 
-        CCSPlayerController? prisoner =
-            GetParticipant(_currentLastRequestSteamId, _currentLastRequestSlot);
-        CCSPlayerController? opponent =
-            GetParticipant(_opponentSteamId, _opponentSlot);
+        // 1초마다 도는 타이머이므로 GetPlayers 풀스캔을 두 번 하지 않도록
+        // 한 번의 순회로 죄수와 상대를 함께 찾습니다.
+        CCSPlayerController? prisoner = null;
+        CCSPlayerController? opponent = null;
+
+        foreach (CCSPlayerController candidate in Utilities.GetPlayers())
+        {
+            if (!TeamManager.IsGameplayParticipant(candidate))
+            {
+                continue;
+            }
+
+            if (prisoner is null &&
+                MatchesParticipant(candidate, _currentLastRequestSteamId, _currentLastRequestSlot))
+            {
+                prisoner = candidate;
+            }
+            else if (opponent is null &&
+                MatchesParticipant(candidate, _opponentSteamId, _opponentSlot))
+            {
+                opponent = candidate;
+            }
+
+            if (prisoner is not null && opponent is not null)
+            {
+                break;
+            }
+        }
 
         if (!TeamManager.IsGameplayParticipant(prisoner) ||
             !prisoner!.PawnIsAlive ||
