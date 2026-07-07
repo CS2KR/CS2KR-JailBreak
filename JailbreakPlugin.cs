@@ -1969,12 +1969,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _pluginInstanceId,
             Server.MapName);
 
-        LogGameRulesDiagnostics("listener map_end before cleanup");
-
+        // map_end 시점엔 맵/엔티티가 이미 언로드되는 중이라(MapName=null) 엔티티
+        // 조회가 네이티브 크래시(try/catch로도 못 잡음)를 일으켜 서버가 죽었습니다.
+        // GameRules 진단, RestoreAllRebels/GuardOrder HUD 정리(GetPlayers)를 모두
+        // 제거하고, 타이머 정지와 메모리 상태 리셋만 수행합니다. pawn 색·HUD 복원은
+        // 맵이 끝나는 시점에 의미가 없고 다음 맵에서 상태가 새로 초기화됩니다.
         StopFreedayHudTimer();
-        _rebelManager?.RestoreAllRebels();
-        _lastRequestManager?.ResetRound();
-        _guardOrderManager?.Clear();
+        _lastRequestManager?.ResetForMapEnd();
+        _guardOrderManager?.ResetForMapEnd();
         _awaitingCustomOrderInput.Clear();
         _roundManager?.HandleMapEnd();
         _playerStateManager?.Clear();

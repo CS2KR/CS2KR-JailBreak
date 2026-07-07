@@ -331,6 +331,21 @@ public sealed class LastRequestManager
         _closedForRound = false;
     }
 
+    // map_end 전용: 맵/엔티티가 언로드되는 중이라 GetPlayers 조회가 네이티브
+    // 크래시를 내므로, 엔티티를 만지지 않고 내부 LR 상태와 타이머만 리셋합니다.
+    // 플레이어별 IsInLastRequest는 이어지는 PlayerStateManager.Clear()가 지웁니다.
+    public void ResetForMapEnd()
+    {
+        _currentLastRequestSteamId = 0;
+        _opponentSteamId = 0;
+        _currentLastRequestSlot = -1;
+        _opponentSlot = -1;
+        _activeGame = LastRequestGame.None;
+        _lastNoScopeWarningAt.Clear();
+        StopLoadoutTimer();
+        _closedForRound = false;
+    }
+
     public void Clear()
     {
         ClearActiveState();
