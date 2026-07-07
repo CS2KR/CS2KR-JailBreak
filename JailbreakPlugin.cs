@@ -67,7 +67,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (config.PrisonersPerGuard < 1)
         {
             Logger.LogWarning(
-                "[Jailbreak] Invalid PrisonersPerGuard value: {Value}. Using default value: 3.",
+                "[CS2.KR] Invalid PrisonersPerGuard value: {Value}. Using default value: 3.",
                 config.PrisonersPerGuard);
 
             config.PrisonersPerGuard = 3;
@@ -174,7 +174,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         Config = config;
 
         Logger.LogInformation(
-            "[Jailbreak] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, AutoFreedayEnabled: {AutoFreedayEnabled}, AutoFreedayDurationSeconds: {AutoFreedayDurationSeconds}, TeamSwapRequestTimeoutSeconds: {TeamSwapRequestTimeoutSeconds}, TeamSwapDeclineCooldownSeconds: {TeamSwapDeclineCooldownSeconds}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
+            "[CS2.KR] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, AutoFreedayEnabled: {AutoFreedayEnabled}, AutoFreedayDurationSeconds: {AutoFreedayDurationSeconds}, TeamSwapRequestTimeoutSeconds: {TeamSwapRequestTimeoutSeconds}, TeamSwapDeclineCooldownSeconds: {TeamSwapDeclineCooldownSeconds}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
             Config.PrisonersPerGuard,
             Config.DisableRadar,
             Config.DisableRadarCommand,
@@ -251,7 +251,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         Logger.LogInformation(
-            "[Jailbreak] Plugin loaded. PluginInstance: {PluginInstance}, HotReload: {HotReload}, ModulePath: {ModulePath}",
+            "[CS2.KR] Plugin loaded. PluginInstance: {PluginInstance}, HotReload: {HotReload}, ModulePath: {ModulePath}",
             _pluginInstanceId,
             hotReload,
             ModulePath);
@@ -319,7 +319,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _freekillEvaluationPending = false;
 
         Logger.LogInformation(
-            "[Jailbreak] Plugin unloaded. PluginInstance: {PluginInstance}, HotReload: {HotReload}",
+            "[CS2.KR] Plugin unloaded. PluginInstance: {PluginInstance}, HotReload: {HotReload}",
             _pluginInstanceId,
             hotReload);
     }
@@ -331,14 +331,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
         if (_freekillTimeManager?.IsActive == true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 프리킬 시간 중에는 전체 자유시간을 시작할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 프리킬 시간 중에는 전체 자유시간을 시작할 수 없습니다.");
             return;
         }
 
@@ -353,7 +353,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (_freedayManager?.StartGlobalFreeday() != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 자유시간을 시작할 수 없습니다. 라운드 상태 또는 기존 자유시간을 확인하세요.");
+                " CS2.\x0BKR\x01｜ 자유시간을 시작할 수 없습니다. 라운드 상태 또는 기존 자유시간을 확인하세요.");
             return;
         }
 
@@ -364,7 +364,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         StartFreedayHudTimer();
 
         commandInfo.ReplyToCommand(
-            "[Jailbreak] 전체 자유시간을 시작했습니다.");
+            " CS2.\x0BKR\x01｜ 전체 자유시간을 시작했습니다.");
     }
 
     private void OnEndGlobalFreedayCommand(
@@ -374,14 +374,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
         if (_freedayManager?.EndGlobalFreeday("관리자 종료") != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 진행 중인 전체 자유시간이 없습니다.");
+                " CS2.\x0BKR\x01｜ 현재 진행 중인 전체 자유시간이 없습니다.");
             return;
         }
 
@@ -390,7 +390,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         CaptureFreekillBaseline();
 
         commandInfo.ReplyToCommand(
-            "[Jailbreak] 전체 자유시간을 종료했습니다.");
+            " CS2.\x0BKR\x01｜ 전체 자유시간을 종료했습니다.");
     }
 
     private void OnGrantPersonalFreedayCommand(
@@ -400,7 +400,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -409,7 +409,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(targetQuery))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 사용법: css_jb freeday give <플레이어 이름 또는 SteamID64>");
+                " CS2.\x0BKR\x01｜ 사용법: css_jb freeday give <플레이어 이름 또는 SteamID64>");
             return;
         }
 
@@ -418,26 +418,26 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (target is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상 플레이어를 한 명으로 특정할 수 없습니다.");
             return;
         }
 
         if (!AdminManager.CanPlayerTarget(player, target))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
             return;
         }
 
         if (_freedayManager?.GrantPersonalFreeday(target) != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 개인 프리데이를 적용할 수 없습니다. 라운드 상태, 전체 자유시간, 대상 팀, 반란자 또는 기존 프리데이 여부를 확인하세요.");
+                " CS2.\x0BKR\x01｜ 개인 프리데이를 적용할 수 없습니다. 라운드 상태, 전체 자유시간, 대상 팀, 반란자 또는 기존 프리데이 여부를 확인하세요.");
             return;
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {target.PlayerName}에게 개인 프리데이를 적용했습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}에게 개인 프리데이를 적용했습니다.");
     }
 
     private void OnRemovePersonalFreedayCommand(
@@ -447,7 +447,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -456,7 +456,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(targetQuery))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 사용법: css_jb freeday remove <플레이어 이름 또는 SteamID64>");
+                " CS2.\x0BKR\x01｜ 사용법: css_jb freeday remove <플레이어 이름 또는 SteamID64>");
             return;
         }
 
@@ -465,14 +465,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (target is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상 플레이어를 한 명으로 특정할 수 없습니다.");
             return;
         }
 
         if (!AdminManager.CanPlayerTarget(player, target))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
             return;
         }
 
@@ -481,12 +481,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 "관리자 해제") != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 해당 플레이어에게 적용된 개인 프리데이가 없습니다.");
+                " CS2.\x0BKR\x01｜ 해당 플레이어에게 적용된 개인 프리데이가 없습니다.");
             return;
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {target.PlayerName}의 개인 프리데이를 해제했습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}의 개인 프리데이를 해제했습니다.");
     }
 
     private void OnFreedayListCommand(
@@ -496,14 +496,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
         if (_roundManager?.State.IsFreedayRound == true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 전체 자유시간이 진행 중입니다.");
+                " CS2.\x0BKR\x01｜ 현재 전체 자유시간이 진행 중입니다.");
         }
 
         IReadOnlyList<string> personalFreedays =
@@ -513,12 +513,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (personalFreedays.Count == 0)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 개인 프리데이 대상자가 없습니다.");
+                " CS2.\x0BKR\x01｜ 현재 개인 프리데이 대상자가 없습니다.");
             return;
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] 개인 프리데이 대상자: {string.Join(", ", personalFreedays)}");
+            $" CS2.\x0BKR\x01｜ 개인 프리데이 대상자: {string.Join(", ", personalFreedays)}");
     }
 
     private void OnJailbreakCommand(
@@ -551,7 +551,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             case "test":
             case "버전":
                 commandInfo.ReplyToCommand(
-                    $"[Jailbreak] Plugin is running. Version: {ModuleVersion}, Instance: {_pluginInstanceId}, ModulePath: {ModulePath}");
+                    $"[CS2.KR] Plugin is running. Version: {ModuleVersion}, Instance: {_pluginInstanceId}, ModulePath: {ModulePath}");
                 return;
 
             case "order":
@@ -603,7 +603,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         return;
                     default:
                         commandInfo.ReplyToCommand(
-                            "[Jailbreak] 사용법: css_jb team <swap|accept|deny> [대상]");
+                            " CS2.\x0BKR\x01｜ 사용법: css_jb team <swap|accept|deny> [대상]");
                         return;
                 }
 
@@ -636,7 +636,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         return;
                     default:
                         commandInfo.ReplyToCommand(
-                            "[Jailbreak] 사용법: css_jb freeday <start|end|give|remove|list> [대상]");
+                            " CS2.\x0BKR\x01｜ 사용법: css_jb freeday <start|end|give|remove|list> [대상]");
                         return;
                 }
 
@@ -660,13 +660,13 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         return;
                     default:
                         commandInfo.ReplyToCommand(
-                            "[Jailbreak] 사용법: css_jb rebel <add|remove|list> [대상]");
+                            " CS2.\x0BKR\x01｜ 사용법: css_jb rebel <add|remove|list> [대상]");
                         return;
                 }
 
             default:
                 commandInfo.ReplyToCommand(
-                    "[Jailbreak] 알 수 없는 하위 명령입니다. css_jb help를 확인하세요.");
+                    " CS2.\x0BKR\x01｜ 알 수 없는 하위 명령입니다. css_jb help를 확인하세요.");
                 return;
         }
     }
@@ -697,12 +697,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             if (DateTimeOffset.UtcNow > expiresAt)
             {
                 trackedPlayer.PrintToChat(
-                    "[Jailbreak] 자유 지시 입력 시간이 만료되었습니다. !지시로 다시 시작하세요.");
+                    " CS2.\x0BKR\x01｜ 자유 지시 입력 시간이 만료되었습니다. !지시로 다시 시작하세요.");
             }
             else if (text is "!취소" or "/취소" or "!cancel" or "/cancel")
             {
                 trackedPlayer.PrintToChat(
-                    "[Jailbreak] 자유 지시 입력을 취소했습니다.");
+                    " CS2.\x0BKR\x01｜ 자유 지시 입력을 취소했습니다.");
                 return HookResult.Handled;
             }
             else
@@ -719,14 +719,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         adminOverride) != true)
                 {
                     trackedPlayer.PrintToChat(
-                        "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.");
+                        " CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.");
                     return HookResult.Handled;
                 }
 
                 if (_guardOrderManager is null)
                 {
                     trackedPlayer.PrintToChat(
-                        "[Jailbreak] 자유 지시 관리자가 초기화되지 않았습니다.");
+                        " CS2.\x0BKR\x01｜ 자유 지시 관리자가 초기화되지 않았습니다.");
                     return HookResult.Handled;
                 }
 
@@ -736,7 +736,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         out string error))
                 {
                     trackedPlayer.PrintToChat(
-                        $"[Jailbreak] 자유 지시 실패: {error}");
+                        $" CS2.\x0BKR\x01｜ 자유 지시 실패: {error}");
                     return HookResult.Handled;
                 }
 
@@ -813,14 +813,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 adminOverride) != true)
         {
             player.PrintToChat(
-                "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.");
+                " CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.");
             return;
         }
 
         if (_guardOrderManager is null)
         {
             player.PrintToChat(
-                "[Jailbreak] 간수 지시 관리자가 초기화되지 않았습니다.");
+                " CS2.\x0BKR\x01｜ 간수 지시 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -830,7 +830,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 out string error))
         {
             player.PrintToChat(
-                $"[Jailbreak] 빠른 지시 실패: {error}");
+                $" CS2.\x0BKR\x01｜ 빠른 지시 실패: {error}");
             return;
         }
 
@@ -858,14 +858,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 adminOverride) != true)
         {
             player.PrintToChat(
-                "[Jailbreak] 간수 또는 권한이 있는 관리자만 추가명령을 사용할 수 있습니다.");
+                " CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 추가명령을 사용할 수 있습니다.");
             return;
         }
 
         if (_guardOrderManager is null)
         {
             player.PrintToChat(
-                "[Jailbreak] 간수 지시 관리자가 초기화되지 않았습니다.");
+                " CS2.\x0BKR\x01｜ 간수 지시 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -875,7 +875,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 out string error))
         {
             player.PrintToChat(
-                $"[Jailbreak] 추가명령 실패: {error}");
+                $" CS2.\x0BKR\x01｜ 추가명령 실패: {error}");
             return;
         }
     }
@@ -959,7 +959,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             ?? 0;
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {roundState} / {freedayState} / 프리킬: {_freekillTimeManager?.StatusText ?? "없음"} / 1:1: {_oneVsOneDuelManager?.StatusText ?? "없음"} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / 카운트다운: {_countdownManager?.StatusText ?? "없음"}");
+            $" CS2.\x0BKR\x01｜ {roundState} / {freedayState} / 프리킬: {_freekillTimeManager?.StatusText ?? "없음"} / 1:1: {_oneVsOneDuelManager?.StatusText ?? "없음"} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / 카운트다운: {_countdownManager?.StatusText ?? "없음"}");
 
         int alivePrisoners = 0;
         int aliveGuards = 0;
@@ -1015,14 +1015,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] 참가자: aliveT={alivePrisoners}, aliveCT={aliveGuards}, humanT={humanPrisoners}, humanCT={humanGuards}, botT={botPrisoners}, botCT={botGuards}");
+            $" CS2.\x0BKR\x01｜ 참가자: aliveT={alivePrisoners}, aliveCT={aliveGuards}, humanT={humanPrisoners}, humanCT={humanGuards}, botT={botPrisoners}, botCT={botGuards}");
 
         int maximumHumanGuards =
             _guardRatioManager?.GetMaximumGuardCount(humanPrisoners)
             ?? 0;
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] 간수 비율: humanCT={humanGuards}/{maximumHumanGuards}, humanT={humanPrisoners}, ratio=1:{_guardRatioManager?.PrisonersPerGuard ?? Config.PrisonersPerGuard}, adminBypass=true, botsExcluded=true");
+            $" CS2.\x0BKR\x01｜ 간수 비율: humanCT={humanGuards}/{maximumHumanGuards}, humanT={humanPrisoners}, ratio=1:{_guardRatioManager?.PrisonersPerGuard ?? Config.PrisonersPerGuard}, adminBypass=true, botsExcluded=true");
 
         PrintRecentIncidents(commandInfo.ReplyToCommand, maxCount: 3);
 
@@ -1031,11 +1031,11 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
     private static void PrintHelp(Action<string> reply)
     {
-        reply("[Jailbreak] 플레이어: !지시, !5, !도움말");
-        reply("[Jailbreak] 관리: css_jb status | reset | order [cancel] | countdown | incidents");
-        reply("[Jailbreak] 자유시간: css_jb freeday <start|end|give|remove|list> [대상]");
-        reply("[Jailbreak] 반란자: css_jb rebel <add|remove|list> [대상]");
-        reply("[Jailbreak] 권한은 Jailbreak.json의 AdminPermissions에서 설정합니다.");
+        reply(" CS2.\x0BKR\x01｜ 플레이어: !지시, !5, !도움말");
+        reply(" CS2.\x0BKR\x01｜ 관리: css_jb status | reset | order [cancel] | countdown | incidents");
+        reply(" CS2.\x0BKR\x01｜ 자유시간: css_jb freeday <start|end|give|remove|list> [대상]");
+        reply(" CS2.\x0BKR\x01｜ 반란자: css_jb rebel <add|remove|list> [대상]");
+        reply(" CS2.\x0BKR\x01｜ 권한은 Jailbreak.json의 AdminPermissions에서 설정합니다.");
     }
 
     private void OnResetStateCommand(
@@ -1045,14 +1045,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
         ResetModeState("관리자 강제 초기화");
 
         commandInfo.ReplyToCommand(
-            "[Jailbreak] 라운드 진행 상태를 제외한 Jailbreak 상태를 초기화했습니다.");
+            " CS2.\x0BKR\x01｜ 라운드 진행 상태를 제외한 Jailbreak 상태를 초기화했습니다.");
     }
 
     private void OnCountdownCommand(
@@ -1063,7 +1063,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (player is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+                " CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
@@ -1084,7 +1084,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         if (_freekillTimeManager?.IsActive == true)
         {
-            reply("[Jailbreak] 프리킬 시간 중에는 카운트다운을 시작할 수 없습니다.");
+            reply(" CS2.\x0BKR\x01｜ 프리킬 시간 중에는 카운트다운을 시작할 수 없습니다.");
             return;
         }
 
@@ -1096,13 +1096,13 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 player,
                 adminOverride) != true)
         {
-            reply("[Jailbreak] 간수 또는 권한이 있는 관리자만 카운트다운을 사용할 수 있습니다.");
+            reply(" CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 카운트다운을 사용할 수 있습니다.");
             return;
         }
 
         if (_countdownManager is null)
         {
-            reply("[Jailbreak] 카운트다운 관리자가 초기화되지 않았습니다.");
+            reply(" CS2.\x0BKR\x01｜ 카운트다운 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -1112,7 +1112,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 label,
                 out string error))
         {
-            reply($"[Jailbreak] 카운트다운 실패: {error}");
+            reply($" CS2.\x0BKR\x01｜ 카운트다운 실패: {error}");
             return;
         }
 
@@ -1170,7 +1170,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (player is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+                " CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
@@ -1187,7 +1187,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (player is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+                " CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
@@ -1201,7 +1201,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (player is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+                " CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
@@ -1215,19 +1215,19 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     {
         if (!TeamManager.IsHumanPlayer(player))
         {
-            reply("[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            reply(" CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(targetQuery))
         {
-            reply("[Jailbreak] 사용법: css_jb team swap <대상>");
+            reply(" CS2.\x0BKR\x01｜ 사용법: css_jb team swap <대상>");
             return;
         }
 
         if (_teamSwapManager is null)
         {
-            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            reply(" CS2.\x0BKR\x01｜ 팀교환 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -1236,7 +1236,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         if (target is null)
         {
-            reply("[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+            reply(" CS2.\x0BKR\x01｜ 대상 플레이어를 한 명으로 특정할 수 없습니다.");
             return;
         }
 
@@ -1245,7 +1245,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 target,
                 out string error))
         {
-            reply($"[Jailbreak] 팀교환 요청 실패: {error}");
+            reply($" CS2.\x0BKR\x01｜ 팀교환 요청 실패: {error}");
             return;
         }
     }
@@ -1256,7 +1256,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     {
         if (_teamSwapManager is null)
         {
-            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            reply(" CS2.\x0BKR\x01｜ 팀교환 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -1264,7 +1264,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 player,
                 out string error))
         {
-            reply($"[Jailbreak] 팀교환 수락 실패: {error}");
+            reply($" CS2.\x0BKR\x01｜ 팀교환 수락 실패: {error}");
             return;
         }
 
@@ -1277,7 +1277,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     {
         if (_teamSwapManager is null)
         {
-            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            reply(" CS2.\x0BKR\x01｜ 팀교환 관리자가 초기화되지 않았습니다.");
             return;
         }
 
@@ -1285,7 +1285,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 player,
                 out string error))
         {
-            reply($"[Jailbreak] 팀교환 거절 실패: {error}");
+            reply($" CS2.\x0BKR\x01｜ 팀교환 거절 실패: {error}");
         }
     }
 
@@ -1312,7 +1312,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         if (incidents.Count == 0)
         {
-            reply("[Jailbreak] 최근 사건이 없습니다.");
+            reply(" CS2.\x0BKR\x01｜ 최근 사건이 없습니다.");
             return;
         }
 
@@ -1320,7 +1320,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         {
             TimeSpan age = DateTimeOffset.UtcNow - incident.CreatedAt;
             int secondsAgo = Math.Max(0, (int)age.TotalSeconds);
-            reply($"[Jailbreak] 최근 사건: {secondsAgo}초 전 - {incident.Text}");
+            reply($" CS2.\x0BKR\x01｜ 최근 사건: {secondsAgo}초 전 - {incident.Text}");
         }
     }
 
@@ -1337,7 +1337,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -1346,7 +1346,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(targetQuery))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 사용법: css_jb rebel add <플레이어 이름 또는 SteamID64>");
+                " CS2.\x0BKR\x01｜ 사용법: css_jb rebel add <플레이어 이름 또는 SteamID64>");
             return;
         }
 
@@ -1355,14 +1355,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (target is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상 플레이어를 한 명으로 특정할 수 없습니다.");
             return;
         }
 
         if (!AdminManager.CanPlayerTarget(player, target))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
             return;
         }
 
@@ -1371,7 +1371,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 "관리자 지정") != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 반란자로 지정할 수 없습니다. 대상이 살아 있는 죄수인지 또는 이미 반란자인지 확인하세요.");
+                " CS2.\x0BKR\x01｜ 반란자로 지정할 수 없습니다. 대상이 살아 있는 죄수인지 또는 이미 반란자인지 확인하세요.");
             return;
         }
 
@@ -1380,7 +1380,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             "반란자 지정");
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {target.PlayerName}을 반란자로 지정했습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}을 반란자로 지정했습니다.");
 
         AddIncident($"{target.PlayerName}님이 반란자가 되었습니다. 사유: 관리자 지정");
     }
@@ -1392,7 +1392,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -1401,7 +1401,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(targetQuery))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 사용법: css_jb rebel remove <플레이어 이름 또는 SteamID64>");
+                " CS2.\x0BKR\x01｜ 사용법: css_jb rebel remove <플레이어 이름 또는 SteamID64>");
             return;
         }
 
@@ -1410,14 +1410,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (target is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상 플레이어를 한 명으로 특정할 수 없습니다.");
             return;
         }
 
         if (!AdminManager.CanPlayerTarget(player, target))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
+                " CS2.\x0BKR\x01｜ 대상의 관리자 면역도가 더 높아 변경할 수 없습니다.");
             return;
         }
 
@@ -1426,12 +1426,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 "관리자 해제") != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 해당 플레이어는 현재 반란자가 아닙니다.");
+                " CS2.\x0BKR\x01｜ 해당 플레이어는 현재 반란자가 아닙니다.");
             return;
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {target.PlayerName}의 반란자 상태를 해제했습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}의 반란자 상태를 해제했습니다.");
 
         AddIncident($"{target.PlayerName}님의 반란자 상태가 해제되었습니다.");
     }
@@ -1443,7 +1443,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!HasAdminPermission(player))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -1454,12 +1454,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (rebels.Count == 0)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 반란자가 없습니다.");
+                " CS2.\x0BKR\x01｜ 현재 반란자가 없습니다.");
             return;
         }
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] 반란자: {string.Join(", ", rebels)}");
+            $" CS2.\x0BKR\x01｜ 반란자: {string.Join(", ", rebels)}");
     }
 
     private void OnGuardOrderMenuCommand(
@@ -1469,7 +1469,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (player is null)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+                " CS2.\x0BKR\x01｜ 이 명령은 게임 안에서 사용하세요.");
             return;
         }
 
@@ -1489,7 +1489,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
              !HasAdminPermission(player)))
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
+                " CS2.\x0BKR\x01｜ 이 명령을 사용할 권한이 없습니다.");
             return;
         }
 
@@ -1499,14 +1499,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 announce: true) != true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 진행 중인 간수 지시가 없습니다.");
+                " CS2.\x0BKR\x01｜ 현재 진행 중인 간수 지시가 없습니다.");
             return;
         }
 
         _awaitingCustomOrderInput.Clear();
 
         commandInfo.ReplyToCommand(
-            "[Jailbreak] 간수 지시를 취소했습니다.");
+            " CS2.\x0BKR\x01｜ 간수 지시를 취소했습니다.");
     }
 
     private void OpenGuardOrderMenu(
@@ -1529,8 +1529,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                     player,
                     adminOverride,
                     requireActiveRound: false) == true
-                    ? "[Jailbreak] 아직 라운드가 시작되지 않았거나 웜업 중입니다."
-                    : "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.";
+                    ? " CS2.\x0BKR\x01｜ 아직 라운드가 시작되지 않았거나 웜업 중입니다."
+                    : " CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.";
 
             if (reply is not null)
             {
@@ -1549,7 +1549,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 adminOverride) != true)
         {
             const string message =
-                "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.";
+                " CS2.\x0BKR\x01｜ 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.";
 
             if (reply is not null)
             {
@@ -1589,7 +1589,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                         Config.CustomOrderInputTimeoutSeconds);
 
                 selectedPlayer.PrintToChat(
-                    $"[Jailbreak] {Config.CustomOrderInputTimeoutSeconds}초 안에 다음 채팅 한 줄을 입력하세요. 취소: !취소");
+                    $" CS2.\x0BKR\x01｜ {Config.CustomOrderInputTimeoutSeconds}초 안에 다음 채팅 한 줄을 입력하세요. 취소: !취소");
             });
     }
 
@@ -1631,7 +1631,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             $"{reason}; guard_order_actor_fallback; adminOverride={adminOverride}; player={player.PlayerName}; slot={player.Slot}; steamId={player.SteamID}; map='{mapName}'");
 
         Logger.LogWarning(
-            "[Jailbreak] Guard order allowed by actor fallback. PluginInstance: {PluginInstance}, Reason: {Reason}, Player: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, Team: {Team}, PawnAlive: {PawnAlive}, Map: {Map}",
+            "[CS2.KR] Guard order allowed by actor fallback. PluginInstance: {PluginInstance}, Reason: {Reason}, Player: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, Team: {Team}, PawnAlive: {PawnAlive}, Map: {Map}",
             _pluginInstanceId,
             reason,
             player.PlayerName,
@@ -1654,7 +1654,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _roundManager?.State;
 
         Logger.LogInformation(
-            "[Jailbreak] Guard order command attempt. PluginInstance: {PluginInstance}, CommandSource: {CommandSource}, PlayerName: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, IsBot: {IsBot}, IsHLTV: {IsHLTV}, IsValid: {IsValid}, Team: {Team}, PawnAlive: {PawnAlive}, Map: {Map}, RoundActive: {RoundActive}, RoundNumber: {RoundNumber}, LastRoundStateChangeReason: {LastRoundStateChangeReason}, LastRoundStateChangeEvent: {LastRoundStateChangeEvent}, TryRecoverResult: {TryRecoverResult}, CanUseResult: {CanUseResult}",
+            "[CS2.KR] Guard order command attempt. PluginInstance: {PluginInstance}, CommandSource: {CommandSource}, PlayerName: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, IsBot: {IsBot}, IsHLTV: {IsHLTV}, IsValid: {IsValid}, Team: {Team}, PawnAlive: {PawnAlive}, Map: {Map}, RoundActive: {RoundActive}, RoundNumber: {RoundNumber}, LastRoundStateChangeReason: {LastRoundStateChangeReason}, LastRoundStateChangeEvent: {LastRoundStateChangeEvent}, TryRecoverResult: {TryRecoverResult}, CanUseResult: {CanUseResult}",
             _pluginInstanceId,
             commandSource,
             player.PlayerName,
@@ -1678,7 +1678,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         string reason)
     {
         Logger.LogInformation(
-            "[Jailbreak] TryRecoverRoundState enter. PluginInstance: {PluginInstance}, Reason: {Reason}, RoundActive: {RoundActive}, Round: {RoundNumber}, Map: {Map}",
+            "[CS2.KR] TryRecoverRoundState enter. PluginInstance: {PluginInstance}, Reason: {Reason}, RoundActive: {RoundActive}, Round: {RoundNumber}, Map: {Map}",
             _pluginInstanceId,
             reason,
             _roundManager?.State.IsActive == true,
@@ -1708,7 +1708,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(mapName))
         {
             Logger.LogDebug(
-                "[Jailbreak] Round recovery skipped because no map is loaded. PluginInstance: {PluginInstance}, Reason: {Reason}",
+                "[CS2.KR] Round recovery skipped because no map is loaded. PluginInstance: {PluginInstance}, Reason: {Reason}",
                 _pluginInstanceId,
                 reason);
             LogTryRecoverRoundStateResult(
@@ -1765,7 +1765,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             }
 
             Logger.LogDebug(
-                "[Jailbreak] Round recovery skipped because cs_gamerules has no GameRules instance. PluginInstance: {PluginInstance}, Reason: {Reason}, Map: {Map}",
+                "[CS2.KR] Round recovery skipped because cs_gamerules has no GameRules instance. PluginInstance: {PluginInstance}, Reason: {Reason}, Map: {Map}",
                 _pluginInstanceId,
                 reason,
                 mapName);
@@ -1778,7 +1778,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         {
             Logger.LogWarning(
                 exception,
-                "[Jailbreak] Failed to inspect CS2 game rules while recovering round state. Reason: {Reason}",
+                "[CS2.KR] Failed to inspect CS2 game rules while recovering round state. Reason: {Reason}",
                 reason);
             LogTryRecoverRoundStateResult(
                 reason,
@@ -1795,7 +1795,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         string detail)
     {
         Logger.LogInformation(
-            "[Jailbreak] TryRecoverRoundState result. PluginInstance: {PluginInstance}, Reason: {Reason}, Result: {Result}, Detail: {Detail}, RoundActive: {RoundActive}, Round: {RoundNumber}, LastRoundStateChangeReason: {LastRoundStateChangeReason}",
+            "[CS2.KR] TryRecoverRoundState result. PluginInstance: {PluginInstance}, Reason: {Reason}, Result: {Result}, Detail: {Detail}, RoundActive: {RoundActive}, Round: {RoundNumber}, LastRoundStateChangeReason: {LastRoundStateChangeReason}",
             _pluginInstanceId,
             reason,
             result,
@@ -1809,7 +1809,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     {
         foreach (string line in GetGameRulesDiagnosticLines())
         {
-            reply($"[Jailbreak] 진단: {line}");
+            reply($" CS2.\x0BKR\x01｜ 진단: {line}");
         }
     }
 
@@ -1818,7 +1818,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         foreach (string line in GetGameRulesDiagnosticLines())
         {
             Logger.LogInformation(
-                "[Jailbreak] GameRules diagnostic. PluginInstance: {PluginInstance}, Source: {Source}, Values: {Values}",
+                "[CS2.KR] GameRules diagnostic. PluginInstance: {PluginInstance}, Source: {Source}, Values: {Values}",
                 _pluginInstanceId,
                 source,
                 line);
@@ -1905,7 +1905,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (!Config.DisableRadar)
         {
             Logger.LogInformation(
-                "[Jailbreak] Radar policy skipped. Reason: {Reason}, DisableRadar: false",
+                "[CS2.KR] Radar policy skipped. Reason: {Reason}, DisableRadar: false",
                 reason);
             return;
         }
@@ -1913,7 +1913,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (string.IsNullOrWhiteSpace(Config.DisableRadarCommand))
         {
             Logger.LogWarning(
-                "[Jailbreak] Radar policy skipped because DisableRadarCommand is empty. Reason: {Reason}",
+                "[CS2.KR] Radar policy skipped because DisableRadarCommand is empty. Reason: {Reason}",
                 reason);
             return;
         }
@@ -1923,7 +1923,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             Server.ExecuteCommand(Config.DisableRadarCommand);
 
             Logger.LogInformation(
-                "[Jailbreak] Radar policy applied. Reason: {Reason}, Command: {Command}",
+                "[CS2.KR] Radar policy applied. Reason: {Reason}, Command: {Command}",
                 reason,
                 Config.DisableRadarCommand);
         }
@@ -1931,7 +1931,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         {
             Logger.LogWarning(
                 exception,
-                "[Jailbreak] Radar policy failed. Reason: {Reason}, Command: {Command}",
+                "[CS2.KR] Radar policy failed. Reason: {Reason}, Command: {Command}",
                 reason,
                 Config.DisableRadarCommand);
         }
@@ -1959,7 +1959,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _playerStateManager?.ResetRoundStates();
 
         Logger.LogWarning(
-            "[Jailbreak] Mode state reset. PluginInstance: {PluginInstance}, Reason: {Reason}, RoundActive: {RoundActive}, Round: {RoundNumber}",
+            "[CS2.KR] Mode state reset. PluginInstance: {PluginInstance}, Reason: {Reason}, RoundActive: {RoundActive}, Round: {RoundNumber}",
             _pluginInstanceId,
             reason,
             _roundManager?.State.IsActive == true,
@@ -2023,7 +2023,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             TimerFlags.STOP_ON_MAPCHANGE);
 
         Logger.LogInformation(
-            "[Jailbreak] Automatic freeday started. DurationSeconds: {DurationSeconds}, Round: {RoundNumber}",
+            "[CS2.KR] Automatic freeday started. DurationSeconds: {DurationSeconds}, Round: {RoundNumber}",
             Config.AutoFreedayDurationSeconds,
             _roundManager.State.RoundNumber);
     }
@@ -2044,7 +2044,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         AddIncident("자동 자유시간이 종료되었습니다.");
 
         Logger.LogInformation(
-            "[Jailbreak] Automatic freeday ended. Round: {RoundNumber}",
+            "[CS2.KR] Automatic freeday ended. Round: {RoundNumber}",
             _roundManager.State.RoundNumber);
     }
 
@@ -2100,7 +2100,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 _guardRatioManager?.GetSnapshot(trackedPlayer);
 
             Logger.LogInformation(
-                "[Jailbreak] Guard join allowed by admin override. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}",
+                "[CS2.KR] Guard join allowed by admin override. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}",
                 trackedPlayer.PlayerName,
                 trackedPlayer.SteamID,
                 adminSnapshot?.PrisonerCount ?? 0,
@@ -2119,7 +2119,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (snapshot?.CanJoinGuard == true)
         {
             Logger.LogInformation(
-                "[Jailbreak] Guard join allowed by ratio. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}, PlayerAlreadyGuard: {PlayerAlreadyGuard}",
+                "[CS2.KR] Guard join allowed by ratio. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}, PlayerAlreadyGuard: {PlayerAlreadyGuard}",
                 trackedPlayer.PlayerName,
                 trackedPlayer.SteamID,
                 snapshot.PrisonerCount,
@@ -2134,10 +2134,10 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         commandInfo.ReplyToCommand(
-            "[Jailbreak] 현재 죄수 인원에 비해 간수가 너무 많아 CT팀에 참가할 수 없습니다.");
+            " CS2.\x0BKR\x01｜ 현재 죄수 인원에 비해 간수가 너무 많아 CT팀에 참가할 수 없습니다.");
 
         Logger.LogInformation(
-            "[Jailbreak] Guard join blocked. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}, SnapshotAvailable: {SnapshotAvailable}",
+            "[CS2.KR] Guard join blocked. Player: {PlayerName}, SteamID: {SteamId}, Prisoners: {Prisoners}, Guards: {Guards}, ProjectedPrisoners: {ProjectedPrisoners}, ProjectedGuards: {ProjectedGuards}, MaximumGuards: {MaximumGuards}, PrisonersPerGuard: {PrisonersPerGuard}, SnapshotAvailable: {SnapshotAvailable}",
             trackedPlayer.PlayerName,
             trackedPlayer.SteamID,
             snapshot?.PrisonerCount ?? 0,
@@ -2156,7 +2156,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         GameEventInfo info)
     {
         Logger.LogInformation(
-            "[Jailbreak] Event received: round_prestart. PluginInstance: {PluginInstance}, PluginRoundActive: {RoundActive}, Map: {Map}",
+            "[CS2.KR] Event received: round_prestart. PluginInstance: {PluginInstance}, PluginRoundActive: {RoundActive}, Map: {Map}",
             _pluginInstanceId,
             _roundManager?.State.IsActive == true,
             Server.MapName);
@@ -2171,7 +2171,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         GameEventInfo info)
     {
         Logger.LogInformation(
-            "[Jailbreak] Event received: round_start. PluginInstance: {PluginInstance}, PluginRoundActiveBefore: {RoundActive}, Map: {Map}",
+            "[CS2.KR] Event received: round_start. PluginInstance: {PluginInstance}, PluginRoundActiveBefore: {RoundActive}, Map: {Map}",
             _pluginInstanceId,
             _roundManager?.State.IsActive == true,
             Server.MapName);
@@ -2200,7 +2200,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         ScheduleFreekillEvaluation("round start");
 
         Logger.LogInformation(
-            "[Jailbreak] Event handled: round_start. PluginInstance: {PluginInstance}, PluginRoundActiveAfter: {RoundActive}, Round: {RoundNumber}",
+            "[CS2.KR] Event handled: round_start. PluginInstance: {PluginInstance}, PluginRoundActiveAfter: {RoundActive}, Round: {RoundNumber}",
             _pluginInstanceId,
             _roundManager?.State.IsActive == true,
             _roundManager?.State.RoundNumber ?? 0);
@@ -2213,7 +2213,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         GameEventInfo info)
     {
         Logger.LogInformation(
-            "[Jailbreak] Event received: round_end. PluginInstance: {PluginInstance}, PluginRoundActiveBefore: {RoundActive}, Round: {RoundNumber}, Map: {Map}",
+            "[CS2.KR] Event received: round_end. PluginInstance: {PluginInstance}, PluginRoundActiveBefore: {RoundActive}, Round: {RoundNumber}, Map: {Map}",
             _pluginInstanceId,
             _roundManager?.State.IsActive == true,
             _roundManager?.State.RoundNumber ?? 0,
@@ -2315,7 +2315,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         Logger.LogInformation(
-            "[Jailbreak] Player changed team. Player: {PlayerName}, SteamID: {SteamId}, OldTeam: {OldTeam}, NewTeam: {NewTeam}",
+            "[CS2.KR] Player changed team. Player: {PlayerName}, SteamID: {SteamId}, OldTeam: {OldTeam}, NewTeam: {NewTeam}",
             trackedPlayer.PlayerName,
             trackedPlayer.SteamID,
             @event.Oldteam,
@@ -2329,7 +2329,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     private void OnMapStart(string mapName)
     {
         Logger.LogInformation(
-            "[Jailbreak] Listener received: map_start. PluginInstance: {PluginInstance}, Map argument: {MapArgument}, Server.MapName: {ServerMapName}",
+            "[CS2.KR] Listener received: map_start. PluginInstance: {PluginInstance}, Map argument: {MapArgument}, Server.MapName: {ServerMapName}",
             _pluginInstanceId,
             mapName,
             Server.MapName);
@@ -2363,7 +2363,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     private void OnMapEnd()
     {
         Logger.LogInformation(
-            "[Jailbreak] Listener received: map_end. PluginInstance: {PluginInstance}, Server.MapName: {Map}",
+            "[CS2.KR] Listener received: map_end. PluginInstance: {PluginInstance}, Server.MapName: {Map}",
             _pluginInstanceId,
             Server.MapName);
 
@@ -2408,7 +2408,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         Logger.LogInformation(
-            "[Jailbreak] Player connected. Player: {PlayerName}, SteamID: {SteamId}, IsBot: {IsBot}, Slot: {Slot}",
+            "[CS2.KR] Player connected. Player: {PlayerName}, SteamID: {SteamId}, IsBot: {IsBot}, Slot: {Slot}",
             trackedPlayer.PlayerName,
             trackedPlayer.SteamID,
             trackedPlayer.IsBot,
@@ -2446,7 +2446,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         ScheduleFreekillEvaluation("client disconnect");
 
         Logger.LogInformation(
-            "[Jailbreak] Player disconnected. SteamID: {SteamId}, StateKey: {StateKey}, Slot: {Slot}",
+            "[CS2.KR] Player disconnected. SteamID: {SteamId}, StateKey: {StateKey}, Slot: {Slot}",
             steamId,
             stateKey,
             playerSlot);
@@ -2555,12 +2555,12 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             }
 
             _guardOrderManager?.SetPriorityHud("프리킬 시간 입니다!");
-            BroadcastChat($"[Jailbreak] 프리킬 시간입니다. {guardText}");
-            PrintCenterAll($"[Jailbreak]\n프리킬 시간입니다\n{guardText}");
+            BroadcastChat($" CS2.\x0BKR\x01｜ 프리킬 시간입니다. {guardText}");
+            PrintCenterAll($"CS2.KR｜\n프리킬 시간입니다\n{guardText}");
             AddIncident($"프리킬 시간이 시작되었습니다. {guardText}");
 
             Logger.LogInformation(
-                "[Jailbreak] Freekill time started. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}, LastGuard: {LastGuard}",
+                "[CS2.KR] Freekill time started. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}, LastGuard: {LastGuard}",
                 reason,
                 counts.AliveGuards,
                 counts.AlivePrisoners,
@@ -2572,7 +2572,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             AddIncident("프리킬 시간이 종료되었습니다.");
 
             Logger.LogInformation(
-                "[Jailbreak] Freekill time ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
+                "[CS2.KR] Freekill time ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
                 reason,
                 counts.AliveGuards,
                 counts.AlivePrisoners);
@@ -2603,11 +2603,11 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             string participantText =
                 _oneVsOneDuelManager.GetParticipantText();
 
-            BroadcastChat($"[Jailbreak] 1:1 상황입니다. {participantText}");
+            BroadcastChat($" CS2.\x0BKR\x01｜ 1:1 상황입니다. {participantText}");
             AddIncident($"1:1 상황이 시작되었습니다. {participantText}");
 
             Logger.LogInformation(
-                "[Jailbreak] One-vs-one duel started. Reason: {Reason}, Prisoner: {Prisoner}, Guard: {Guard}",
+                "[CS2.KR] One-vs-one duel started. Reason: {Reason}, Prisoner: {Prisoner}, Guard: {Guard}",
                 reason,
                 counts.LastPrisonerName,
                 counts.LastGuardName);
@@ -2617,7 +2617,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             AddIncident("1:1 상황이 종료되었습니다.");
 
             Logger.LogInformation(
-                "[Jailbreak] One-vs-one duel ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
+                "[CS2.KR] One-vs-one duel ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
                 reason,
                 counts.AliveGuards,
                 counts.AlivePrisoners);

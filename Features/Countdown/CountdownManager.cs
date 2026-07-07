@@ -53,7 +53,7 @@ public sealed class CountdownManager
             ? "시작"
             : label.Trim();
 
-        Broadcast($"[Jailbreak] {issuer.PlayerName}의 {_remainingSeconds}초 카운트다운: {_label}");
+        Broadcast($" CS2.\x0BKR\x01｜ {issuer.PlayerName}의 {_remainingSeconds}초 카운트다운: {_label}");
         ShowCountdown();
 
         _timer = _plugin.AddTimer(
@@ -62,7 +62,7 @@ public sealed class CountdownManager
             TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
 
         _logger.LogInformation(
-            "[Jailbreak] Countdown started. Issuer: {Issuer}, SteamID: {SteamID}, Seconds: {Seconds}, Label: {Label}",
+            "[CS2.KR] Countdown started. Issuer: {Issuer}, SteamID: {SteamID}, Seconds: {Seconds}, Label: {Label}",
             issuer.PlayerName,
             issuer.SteamID,
             seconds,
@@ -85,8 +85,8 @@ public sealed class CountdownManager
 
         if (_remainingSeconds <= 0)
         {
-            Broadcast($"[Jailbreak] 카운트다운 종료: {_label}");
-            PrintCenterAll($"[Jailbreak]\n{_label}");
+            Broadcast($" CS2.\x0BKR\x01｜ 카운트다운 종료: {_label}");
+            PrintCenterAll($"CS2.KR｜\n{_label}");
             Stop();
             return;
         }
@@ -96,8 +96,8 @@ public sealed class CountdownManager
 
     private void ShowCountdown()
     {
-        PrintCenterAll($"[Jailbreak]\n{_remainingSeconds}");
-        Broadcast($"[Jailbreak] {_remainingSeconds}");
+        PrintCenterAll($"CS2.KR｜\n{_remainingSeconds}");
+        Broadcast($"[CS2.KR] {_remainingSeconds}");
     }
 
     private static void PrintCenterAll(string message)

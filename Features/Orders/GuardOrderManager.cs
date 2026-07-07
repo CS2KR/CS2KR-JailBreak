@@ -124,7 +124,7 @@ public sealed class GuardOrderManager
         string reason)
     {
         _logger.LogInformation(
-            "[Jailbreak] GuardOrderManager.CanUse result. Player: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, IsBot: {IsBot}, IsHLTV: {IsHLTV}, IsValid: {IsValid}, Team: {Team}, PawnAlive: {PawnAlive}, HasAdminOverride: {HasAdminOverride}, RequireActiveRound: {RequireActiveRound}, RoundActive: {RoundActive}, Round: {RoundNumber}, Result: {Result}, Reason: {Reason}",
+            "[CS2.KR] GuardOrderManager.CanUse result. Player: {PlayerName}, Slot: {Slot}, SteamID: {SteamId}, IsBot: {IsBot}, IsHLTV: {IsHLTV}, IsValid: {IsValid}, Team: {Team}, PawnAlive: {PawnAlive}, HasAdminOverride: {HasAdminOverride}, RequireActiveRound: {RequireActiveRound}, RoundActive: {RoundActive}, Round: {RoundNumber}, Result: {Result}, Reason: {Reason}",
             player?.PlayerName ?? "<null>",
             player?.Slot ?? -1,
             player?.SteamID ?? 0,
@@ -291,7 +291,7 @@ public sealed class GuardOrderManager
         StartHudTimer();
 
         _logger.LogInformation(
-            "[Jailbreak] Custom guard order issued. Text: {Text}, Issuer: {Issuer}, SteamID: {SteamId}",
+            "[CS2.KR] Custom guard order issued. Text: {Text}, Issuer: {Issuer}, SteamID: {SteamId}",
             text,
             issuer.PlayerName,
             issuer.SteamID);
@@ -378,7 +378,7 @@ public sealed class GuardOrderManager
         StartHudTimer();
 
         _logger.LogInformation(
-            "[Jailbreak] Dollar guard order issued. RawText: {RawText}, Deadline: {Deadline}, Instruction: {Instruction}, Issuer: {Issuer}, SteamID: {SteamId}",
+            "[CS2.KR] Dollar guard order issued. RawText: {RawText}, Deadline: {Deadline}, Instruction: {Instruction}, Issuer: {Issuer}, SteamID: {SteamId}",
             text,
             FormatRoundTime(deadlineRoundSeconds),
             instruction,
@@ -421,7 +421,7 @@ public sealed class GuardOrderManager
         BroadcastChat($"[추가명령] {text}");
 
         _logger.LogInformation(
-            "[Jailbreak] Extra guard order updated. Text: {Text}, Issuer: {Issuer}, SteamID: {SteamId}",
+            "[CS2.KR] Extra guard order updated. Text: {Text}, Issuer: {Issuer}, SteamID: {SteamId}",
             text,
             issuer.PlayerName,
             issuer.SteamID);
@@ -503,11 +503,11 @@ public sealed class GuardOrderManager
         if (announce)
         {
             BroadcastChat(
-                $"[Jailbreak] 현재 간수 지시가 취소되었습니다. 사유: {reason}");
+                $" CS2.\x0BKR\x01｜ 현재 간수 지시가 취소되었습니다. 사유: {reason}");
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Guard order cancelled. Text: {Text}, Reason: {Reason}, Issuer: {Issuer}, SteamID: {SteamId}",
+            "[CS2.KR] Guard order cancelled. Text: {Text}, Reason: {Reason}, Issuer: {Issuer}, SteamID: {SteamId}",
             previousText,
             reason,
             issuer?.PlayerName ?? "Server",
@@ -697,7 +697,7 @@ public sealed class GuardOrderManager
         {
             MenuManager.CloseActiveMenu(player);
             player.PrintToChat(
-                "[Jailbreak] 현재 선택할 수 있는 지시 시간이 없습니다.");
+                " CS2.\x0BKR\x01｜ 현재 선택할 수 있는 지시 시간이 없습니다.");
             return;
         }
 
@@ -740,7 +740,7 @@ public sealed class GuardOrderManager
                             out string error))
                     {
                         selectedPlayer.PrintToChat(
-                            $"[Jailbreak] 지시 실패: {error}");
+                            $" CS2.\x0BKR\x01｜ 지시 실패: {error}");
                         return;
                     }
 
@@ -845,7 +845,7 @@ public sealed class GuardOrderManager
         StartHudTimer();
 
         _logger.LogInformation(
-            "[Jailbreak] Guard order issued. Location: {Location}, Deadline: {Deadline}, Issuer: {Issuer}, SteamID: {SteamId}",
+            "[CS2.KR] Guard order issued. Location: {Location}, Deadline: {Deadline}, Issuer: {Issuer}, SteamID: {SteamId}",
             location,
             FormatRoundTime(deadlineRoundSeconds),
             issuer.PlayerName,
@@ -976,7 +976,7 @@ public sealed class GuardOrderManager
             {
                 _logger.LogWarning(
                     exception,
-                    "[Jailbreak] Guard order notification sound failed. Sound: {Sound}",
+                    "[CS2.KR] Guard order notification sound failed. Sound: {Sound}",
                     _config.NotificationSound);
                 return;
             }

@@ -57,12 +57,12 @@ public sealed class TeamSwapManager
             now.Add(_requestTimeout));
 
         requester.PrintToChat(
-            $"[Jailbreak] {target.PlayerName}에게 팀교환 요청을 보냈습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}에게 팀교환 요청을 보냈습니다.");
         target.PrintToChat(
-            $"[Jailbreak] {requester.PlayerName}님이 팀교환을 요청했습니다. 수락: css_jb team accept / 거절: css_jb team deny");
+            $" CS2.\x0BKR\x01｜ {requester.PlayerName}님이 팀교환을 요청했습니다. 수락: css_jb team accept / 거절: css_jb team deny");
 
         _logger.LogInformation(
-            "[Jailbreak] Team swap requested. Requester: {Requester}, RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
+            "[CS2.KR] Team swap requested. Requester: {Requester}, RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
             requester.PlayerName,
             requester.SteamID,
             target.PlayerName,
@@ -104,10 +104,10 @@ public sealed class TeamSwapManager
         _requestsByTarget.Remove(target.SteamID);
 
         BroadcastChat(
-            $"[Jailbreak] {requester.PlayerName}님과 {target.PlayerName}님이 팀을 교환했습니다.");
+            $" CS2.\x0BKR\x01｜ {requester.PlayerName}님과 {target.PlayerName}님이 팀을 교환했습니다.");
 
         _logger.LogInformation(
-            "[Jailbreak] Team swap accepted. Requester: {Requester}, RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
+            "[CS2.KR] Team swap accepted. Requester: {Requester}, RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
             requester.PlayerName,
             requester.SteamID,
             target.PlayerName,
@@ -139,11 +139,11 @@ public sealed class TeamSwapManager
             FindHumanPlayerBySteamId(request.RequesterSteamId);
 
         requester?.PrintToChat(
-            $"[Jailbreak] {target.PlayerName}님이 팀교환 요청을 거절했습니다.");
-        target.PrintToChat("[Jailbreak] 팀교환 요청을 거절했습니다.");
+            $" CS2.\x0BKR\x01｜ {target.PlayerName}님이 팀교환 요청을 거절했습니다.");
+        target.PrintToChat(" CS2.\x0BKR\x01｜ 팀교환 요청을 거절했습니다.");
 
         _logger.LogInformation(
-            "[Jailbreak] Team swap declined. RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
+            "[CS2.KR] Team swap declined. RequesterSteamID: {RequesterSteamId}, Target: {Target}, TargetSteamID: {TargetSteamId}",
             request.RequesterSteamId,
             target.PlayerName,
             target.SteamID);

@@ -128,7 +128,7 @@ public sealed class LastRequestManager
 
             _logger.LogWarning(
                 exception,
-                "[Jailbreak] LR active weapon lookup failed. Attacker: {Attacker}, SteamID: {SteamID}, Slot: {Slot}, Game: {Game}",
+                "[CS2.KR] LR active weapon lookup failed. Attacker: {Attacker}, SteamID: {SteamID}, Slot: {Slot}, Game: {Game}",
                 attacker.PlayerName,
                 attacker.SteamID,
                 attacker.Slot,
@@ -219,7 +219,7 @@ public sealed class LastRequestManager
 
         if (!CanOpenMenu(player, out string error))
         {
-            player.PrintToChat($"[Jailbreak] LR 메뉴를 열 수 없습니다. {error}");
+            player.PrintToChat($" CS2.\x0BKR\x01｜ LR 메뉴를 열 수 없습니다. {error}");
             return;
         }
 
@@ -264,7 +264,7 @@ public sealed class LastRequestManager
         if (aliveOpponents.Count == 0)
         {
             _logger.LogInformation(
-                "[Jailbreak] LR evaluation skipped: no alive guards. Round: {RoundNumber}",
+                "[CS2.KR] LR evaluation skipped: no alive guards. Round: {RoundNumber}",
                 _roundManager.State.RoundNumber);
             ClearActiveState();
             return;
@@ -277,7 +277,7 @@ public sealed class LastRequestManager
         if (alivePrisoners.Count != 1)
         {
             _logger.LogInformation(
-                "[Jailbreak] LR evaluation skipped: alive LR-blocking prisoner count is {AlivePrisoners}. AliveGuards: {AliveGuards}, BotsBlockLastRequest: {BotsBlockLastRequest}, Round: {RoundNumber}",
+                "[CS2.KR] LR evaluation skipped: alive LR-blocking prisoner count is {AlivePrisoners}. AliveGuards: {AliveGuards}, BotsBlockLastRequest: {BotsBlockLastRequest}, Round: {RoundNumber}",
                 alivePrisoners.Count,
                 aliveOpponents.Count,
                 _botsBlockLastRequest,
@@ -314,12 +314,12 @@ public sealed class LastRequestManager
         _currentLastRequestSlot = prisoner.Slot;
 
         BroadcastChat(
-            $"[Jailbreak] 마지막 죄수 {prisoner.PlayerName}의 LR이 가능합니다.");
+            $" CS2.\x0BKR\x01｜ 마지막 죄수 {prisoner.PlayerName}의 LR이 가능합니다.");
 
-        prisoner.PrintToCenter("[Jailbreak]\n마지막 죄수 - !lr");
+        prisoner.PrintToCenter("CS2.KR｜\n마지막 죄수 - !lr");
 
         _logger.LogInformation(
-            "[Jailbreak] Last prisoner detected. Player: {PlayerName}, SteamID: {SteamId}, Round: {RoundNumber}",
+            "[CS2.KR] Last prisoner detected. Player: {PlayerName}, SteamID: {SteamId}, Round: {RoundNumber}",
             prisoner.PlayerName,
             prisoner.SteamID,
             _roundManager.State.RoundNumber);
@@ -368,11 +368,11 @@ public sealed class LastRequestManager
         if (announce)
         {
             BroadcastChat(
-                $"[Jailbreak] LR {gameLabel}이 취소되었습니다. 사유: {reason}");
+                $" CS2.\x0BKR\x01｜ LR {gameLabel}이 취소되었습니다. 사유: {reason}");
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Last request cancelled. Game: {Game}, Reason: {Reason}",
+            "[CS2.KR] Last request cancelled. Game: {Game}, Reason: {Reason}",
             _activeGame,
             reason);
 
@@ -437,14 +437,14 @@ public sealed class LastRequestManager
         if (winner is not null && winner.IsValid && winner.PawnIsAlive)
         {
             BroadcastChat(
-                $"[Jailbreak] LR {gameLabel} 종료: {winner.PlayerName} 승리");
+                $" CS2.\x0BKR\x01｜ LR {gameLabel} 종료: {winner.PlayerName} 승리");
 
             winner.PrintToCenterHtml(
                 "<font color='#66BB6A' size='24'><b>LR 승리</b></font>",
                 4);
 
             _logger.LogInformation(
-                "[Jailbreak] Last request finished. Game: {Game}, Winner: {Winner}, WinnerSteamID: {WinnerSteamID}, Loser: {Loser}, LoserSteamID: {LoserSteamID}",
+                "[CS2.KR] Last request finished. Game: {Game}, Winner: {Winner}, WinnerSteamID: {WinnerSteamID}, Loser: {Loser}, LoserSteamID: {LoserSteamID}",
                 _activeGame,
                 winner.PlayerName,
                 winner.SteamID,
@@ -454,10 +454,10 @@ public sealed class LastRequestManager
         else
         {
             BroadcastChat(
-                $"[Jailbreak] LR {gameLabel}이 종료되었습니다.");
+                $" CS2.\x0BKR\x01｜ LR {gameLabel}이 종료되었습니다.");
 
             _logger.LogInformation(
-                "[Jailbreak] Last request finished without winner. Game: {Game}, Victim: {Victim}, VictimSteamID: {VictimSteamID}",
+                "[CS2.KR] Last request finished without winner. Game: {Game}, Victim: {Victim}, VictimSteamID: {VictimSteamID}",
                 _activeGame,
                 victim!.PlayerName,
                 victim.SteamID);
@@ -543,10 +543,10 @@ public sealed class LastRequestManager
         _lastNoScopeWarningAt[player.SteamID] = now;
 
         player.PrintToChat(
-            "[Jailbreak] 노스코프전에서는 조준경을 사용하지 마세요.");
+            " CS2.\x0BKR\x01｜ 노스코프전에서는 조준경을 사용하지 마세요.");
 
         _logger.LogInformation(
-            "[Jailbreak] No-scope zoom attempt detected. Player: {PlayerName}, SteamID: {SteamID}",
+            "[CS2.KR] No-scope zoom attempt detected. Player: {PlayerName}, SteamID: {SteamID}",
             player.PlayerName,
             player.SteamID);
     }
@@ -643,7 +643,7 @@ public sealed class LastRequestManager
             !GetAliveGuards().Any())
         {
             _logger.LogInformation(
-                "[Jailbreak] LR candidate fallback rejected. Reason: {Reason}, Player: {PlayerName}, SteamID: {SteamID}, Slot: {Slot}, RoundActive: {RoundActive}, AlivePrisoners: {AlivePrisoners}, AliveGuards: {AliveGuards}, BotsBlockLastRequest: {BotsBlockLastRequest}",
+                "[CS2.KR] LR candidate fallback rejected. Reason: {Reason}, Player: {PlayerName}, SteamID: {SteamID}, Slot: {Slot}, RoundActive: {RoundActive}, AlivePrisoners: {AlivePrisoners}, AliveGuards: {AliveGuards}, BotsBlockLastRequest: {BotsBlockLastRequest}",
                 reason,
                 player.PlayerName,
                 player.SteamID,
@@ -671,7 +671,7 @@ public sealed class LastRequestManager
         _closedForRound = false;
 
         _logger.LogWarning(
-            "[Jailbreak] LR candidate recovered from command. Reason: {Reason}, Player: {PlayerName}, SteamID: {SteamID}, Slot: {Slot}, RoundActive: {RoundActive}, Round: {RoundNumber}",
+            "[CS2.KR] LR candidate recovered from command. Reason: {Reason}, Player: {PlayerName}, SteamID: {SteamID}, Slot: {Slot}, RoundActive: {RoundActive}, Round: {RoundNumber}",
             reason,
             player.PlayerName,
             player.SteamID,
@@ -689,7 +689,7 @@ public sealed class LastRequestManager
         if (!CanOpenMenu(prisoner, out string error))
         {
             MenuManager.CloseActiveMenu(prisoner);
-            prisoner.PrintToChat($"[Jailbreak] LR 메뉴를 열 수 없습니다. {error}");
+            prisoner.PrintToChat($" CS2.\x0BKR\x01｜ LR 메뉴를 열 수 없습니다. {error}");
             return;
         }
 
@@ -720,7 +720,7 @@ public sealed class LastRequestManager
                             out string startError))
                     {
                         selectedPlayer.PrintToChat(
-                            $"[Jailbreak] LR 시작 실패: {startError}");
+                            $" CS2.\x0BKR\x01｜ LR 시작 실패: {startError}");
                     }
                 });
         }
@@ -759,7 +759,7 @@ public sealed class LastRequestManager
 
             _logger.LogWarning(
                 exception,
-                "[Jailbreak] Last request loadout failed. Game: {Game}, Prisoner: {Prisoner}, Guard: {Guard}",
+                "[CS2.KR] Last request loadout failed. Game: {Game}, Prisoner: {Prisoner}, Guard: {Guard}",
                 game,
                 prisoner.PlayerName,
                 guard!.PlayerName);
@@ -775,15 +775,15 @@ public sealed class LastRequestManager
         string gameLabel = GetGameLabel(game);
 
         BroadcastChat(
-            $"[Jailbreak] LR {gameLabel}: {prisoner.PlayerName} vs {guard.PlayerName}");
+            $"[CS2.KR] LR {gameLabel}: {prisoner.PlayerName} vs {guard.PlayerName}");
 
         if (game == LastRequestGame.NoScope)
         {
-            BroadcastChat("[Jailbreak] 노스코프전 규칙: 조준경 사용 없이 진행합니다.");
+            BroadcastChat(" CS2.\x0BKR\x01｜ 노스코프전 규칙: 조준경 사용 없이 진행합니다.");
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Last request started. Game: {Game}, Prisoner: {Prisoner}, PrisonerSteamID: {PrisonerSteamID}, Guard: {Guard}, GuardSteamID: {GuardSteamID}",
+            "[CS2.KR] Last request started. Game: {Game}, Prisoner: {Prisoner}, PrisonerSteamID: {PrisonerSteamID}, Guard: {Guard}, GuardSteamID: {GuardSteamID}",
             game,
             prisoner.PlayerName,
             prisoner.SteamID,
@@ -887,7 +887,7 @@ public sealed class LastRequestManager
         {
             _logger.LogWarning(
                 exception,
-                "[Jailbreak] Last request loadout enforcement failed. Game: {Game}, PrisonerSteamID: {PrisonerSteamID}, OpponentSteamID: {OpponentSteamID}",
+                "[CS2.KR] Last request loadout enforcement failed. Game: {Game}, PrisonerSteamID: {PrisonerSteamID}, OpponentSteamID: {OpponentSteamID}",
                 _activeGame,
                 _currentLastRequestSteamId,
                 _opponentSteamId);

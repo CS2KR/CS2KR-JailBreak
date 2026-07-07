@@ -44,12 +44,12 @@ public sealed class FreedayManager
             if (IsValidHumanPlayer(player))
             {
                 player.PrintToChat(
-                    "[Jailbreak] 전체 자유시간이 시작되었습니다.");
+                    " CS2.\x0BKR\x01｜ 전체 자유시간이 시작되었습니다.");
             }
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Global freeday started. Round: {RoundNumber}, Map: {Map}",
+            "[CS2.KR] Global freeday started. Round: {RoundNumber}, Map: {Map}",
             roundState.RoundNumber,
             roundState.CurrentMap);
 
@@ -72,12 +72,12 @@ public sealed class FreedayManager
             if (IsValidHumanPlayer(player))
             {
                 player.PrintToChat(
-                    $"[Jailbreak] 전체 자유시간이 종료되었습니다. 사유: {reason}");
+                    $" CS2.\x0BKR\x01｜ 전체 자유시간이 종료되었습니다. 사유: {reason}");
             }
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Global freeday ended. Round: {RoundNumber}, Map: {Map}, Reason: {Reason}",
+            "[CS2.KR] Global freeday ended. Round: {RoundNumber}, Map: {Map}, Reason: {Reason}",
             roundState.RoundNumber,
             roundState.CurrentMap,
             reason);
@@ -124,10 +124,10 @@ public sealed class FreedayManager
         state.IsFreeday = true;
 
         BroadcastChat(
-            $"[Jailbreak] {target!.PlayerName}에게 개인 프리데이가 적용되었습니다.");
+            $" CS2.\x0BKR\x01｜ {target!.PlayerName}에게 개인 프리데이가 적용되었습니다.");
 
         _logger.LogInformation(
-            "[Jailbreak] Personal freeday granted. Player: {PlayerName}, SteamID: {SteamId}",
+            "[CS2.KR] Personal freeday granted. Player: {PlayerName}, SteamID: {SteamId}",
             target.PlayerName,
             target.SteamID);
 
@@ -155,10 +155,10 @@ public sealed class FreedayManager
         state.IsFreeday = false;
 
         BroadcastChat(
-            $"[Jailbreak] {trackedTarget.PlayerName}의 개인 프리데이가 해제되었습니다. 사유: {reason}");
+            $" CS2.\x0BKR\x01｜ {trackedTarget.PlayerName}의 개인 프리데이가 해제되었습니다. 사유: {reason}");
 
         _logger.LogInformation(
-            "[Jailbreak] Personal freeday removed. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
+            "[CS2.KR] Personal freeday removed. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
             trackedTarget.PlayerName,
             trackedTarget.SteamID,
             reason);
@@ -190,13 +190,13 @@ public sealed class FreedayManager
         if (cleared > 0 && announce)
         {
             BroadcastChat(
-                $"[Jailbreak] 개인 프리데이 {cleared}건이 정리되었습니다. 사유: {reason}");
+                $" CS2.\x0BKR\x01｜ 개인 프리데이 {cleared}건이 정리되었습니다. 사유: {reason}");
         }
 
         if (cleared > 0)
         {
             _logger.LogInformation(
-                "[Jailbreak] Personal freedays cleared. Count: {Count}, Reason: {Reason}",
+                "[CS2.KR] Personal freedays cleared. Count: {Count}, Reason: {Reason}",
                 cleared,
                 reason);
         }

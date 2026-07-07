@@ -64,10 +64,10 @@ public sealed class RebelManager
         ApplyRebelColor(attacker, state);
 
         attacker.PrintToChat(
-            "[Jailbreak] 간수를 공격하여 반란자가 되었습니다.");
+            " CS2.\x0BKR\x01｜ 간수를 공격하여 반란자가 되었습니다.");
 
         _logger.LogInformation(
-            "[Jailbreak] Player became rebel. Player: {PlayerName}, SteamID: {SteamId}, Victim: {VictimName}, Damage: {Damage}",
+            "[CS2.KR] Player became rebel. Player: {PlayerName}, SteamID: {SteamId}, Victim: {VictimName}, Damage: {Damage}",
             attacker.PlayerName,
             attacker.SteamID,
             victim.PlayerName,
@@ -98,10 +98,10 @@ public sealed class RebelManager
         ApplyRebelColor(target!, state);
 
         BroadcastChat(
-            $"[Jailbreak] {target!.PlayerName}이 반란자로 지정되었습니다. 사유: {reason}");
+            $" CS2.\x0BKR\x01｜ {target!.PlayerName}이 반란자로 지정되었습니다. 사유: {reason}");
 
         _logger.LogInformation(
-            "[Jailbreak] Player marked rebel. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
+            "[CS2.KR] Player marked rebel. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
             target.PlayerName,
             target.SteamID,
             reason);
@@ -130,10 +130,10 @@ public sealed class RebelManager
         state.IsRebel = false;
 
         BroadcastChat(
-            $"[Jailbreak] {target!.PlayerName}의 반란자 상태가 해제되었습니다. 사유: {reason}");
+            $" CS2.\x0BKR\x01｜ {target!.PlayerName}의 반란자 상태가 해제되었습니다. 사유: {reason}");
 
         _logger.LogInformation(
-            "[Jailbreak] Player unmarked rebel. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
+            "[CS2.KR] Player unmarked rebel. Player: {PlayerName}, SteamID: {SteamId}, Reason: {Reason}",
             target.PlayerName,
             target.SteamID,
             reason);
@@ -255,7 +255,7 @@ public sealed class RebelManager
         if (pawn is null || !pawn.IsValid)
         {
             _logger.LogDebug(
-                "[Jailbreak] Rebel color skipped because player pawn is invalid. Player: {PlayerName}, SteamID: {SteamId}",
+                "[CS2.KR] Rebel color skipped because player pawn is invalid. Player: {PlayerName}, SteamID: {SteamId}",
                 player.PlayerName,
                 player.SteamID);
             return;
@@ -274,7 +274,7 @@ public sealed class RebelManager
         pawn.Render = RebelRenderColor;
 
         _logger.LogDebug(
-            "[Jailbreak] Rebel color applied. Player: {PlayerName}, SteamID: {SteamId}",
+            "[CS2.KR] Rebel color applied. Player: {PlayerName}, SteamID: {SteamId}",
             player.PlayerName,
             player.SteamID);
     }
@@ -295,7 +295,7 @@ public sealed class RebelManager
             pawn.Render = state.OriginalRenderColor;
 
             _logger.LogDebug(
-                "[Jailbreak] Rebel color restored. Player: {PlayerName}, SteamID: {SteamId}",
+                "[CS2.KR] Rebel color restored. Player: {PlayerName}, SteamID: {SteamId}",
                 player.PlayerName,
                 player.SteamID);
         }

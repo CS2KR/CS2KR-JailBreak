@@ -29,7 +29,7 @@ public sealed class RoundManager
             "map_start");
 
         _logger.LogInformation(
-            "[Jailbreak] Map started. PluginInstance: {PluginInstance}, Map: {MapName}",
+            "[CS2.KR] Map started. PluginInstance: {PluginInstance}, Map: {MapName}",
             _pluginInstanceId,
             mapName);
         LogStateChange();
@@ -49,7 +49,7 @@ public sealed class RoundManager
             "round_start");
 
         _logger.LogInformation(
-            "[Jailbreak] Round started. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}, RecoveredBeforeEvent: {RecoveredBeforeEvent}",
+            "[CS2.KR] Round started. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}, RecoveredBeforeEvent: {RecoveredBeforeEvent}",
             _pluginInstanceId,
             State.RoundNumber,
             State.CurrentMap,
@@ -81,7 +81,7 @@ public sealed class RoundManager
             "round_recovery");
 
         _logger.LogWarning(
-            "[Jailbreak] Recovered active round state. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}, ElapsedSeconds: {ElapsedSeconds:F2}, Reason: {Reason}",
+            "[CS2.KR] Recovered active round state. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}, ElapsedSeconds: {ElapsedSeconds:F2}, Reason: {Reason}",
             _pluginInstanceId,
             State.RoundNumber,
             State.CurrentMap,
@@ -97,13 +97,13 @@ public sealed class RoundManager
         if (!State.IsActive)
         {
             _logger.LogDebug(
-                "[Jailbreak] Ignored round end because no round is active. PluginInstance: {PluginInstance}",
+                "[CS2.KR] Ignored round end because no round is active. PluginInstance: {PluginInstance}",
                 _pluginInstanceId);
             return;
         }
 
         _logger.LogInformation(
-            "[Jailbreak] Round ended. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}",
+            "[CS2.KR] Round ended. PluginInstance: {PluginInstance}, Round: {RoundNumber}, Map: {MapName}",
             _pluginInstanceId,
             State.RoundNumber,
             State.CurrentMap);
@@ -129,7 +129,7 @@ public sealed class RoundManager
             "map_end");
 
         _logger.LogInformation(
-            "[Jailbreak] Map ended. PluginInstance: {PluginInstance}, Map: {MapName}",
+            "[CS2.KR] Map ended. PluginInstance: {PluginInstance}, Map: {MapName}",
             _pluginInstanceId,
             mapName);
         LogStateChange();
@@ -151,7 +151,7 @@ public sealed class RoundManager
     private void LogStateChange()
     {
         _logger.LogInformation(
-            "[Jailbreak] Round state changed. PluginInstance: {PluginInstance}, PreviousActive: {PreviousActive}, NewActive: {NewActive}, Reason: {Reason}, Event: {Event}, Map: {Map}, Round: {Round}, ChangedAtUtc: {ChangedAtUtc:O}",
+            "[CS2.KR] Round state changed. PluginInstance: {PluginInstance}, PreviousActive: {PreviousActive}, NewActive: {NewActive}, Reason: {Reason}, Event: {Event}, Map: {Map}, Round: {Round}, ChangedAtUtc: {ChangedAtUtc:O}",
             _pluginInstanceId,
             State.LastChangePreviousIsActive,
             State.LastChangeNewIsActive,
