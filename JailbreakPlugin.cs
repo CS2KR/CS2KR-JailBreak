@@ -244,7 +244,16 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         StopFreedayHudTimer();
         StopRebelColorTimer();
 
-        _rebelManager?.RestoreAllRebels();
+        // 핫리로드처럼 맵이 로드된 상태에서는 반란자 색·LR·지시 HUD를 정상
+        // 복원하지만, 맵 언로드와 겹친 시점(MapName=null)엔 엔티티 조회가
+        // 네이티브 크래시를 내므로 엔티티를 만지지 않는 리셋만 수행합니다.
+        bool worldLoaded = !string.IsNullOrEmpty(Server.MapName);
+
+        if (worldLoaded)
+        {
+            _rebelManager?.RestoreAllRebels();
+        }
+
         _roundManager?.Shutdown();
         _roundManager = null;
 
@@ -253,9 +262,19 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _guardRatioManager = null;
         _rebelManager = null;
         _freedayManager = null;
-        _lastRequestManager?.ResetRound();
+
+        if (worldLoaded)
+        {
+            _lastRequestManager?.ResetRound();
+            _guardOrderManager?.Clear();
+        }
+        else
+        {
+            _lastRequestManager?.ResetForMapEnd();
+            _guardOrderManager?.ResetForMapEnd();
+        }
+
         _lastRequestManager = null;
-        _guardOrderManager?.Clear();
         _guardOrderManager = null;
         _stateKeysBySlot.Clear();
         _awaitingCustomOrderInput.Clear();
