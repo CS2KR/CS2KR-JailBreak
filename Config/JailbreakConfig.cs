@@ -23,11 +23,57 @@ public sealed class JailbreakConfig : BasePluginConfig
     [JsonPropertyName("DisableRadarCommand")]
     public string DisableRadarCommand { get; set; } = "sv_disable_radar 1";
 
-    [JsonPropertyName("BotsBlockLastRequest")]
-    public bool BotsBlockLastRequest { get; set; } = true;
+    [JsonPropertyName("AutoFreedayEnabled")]
+    public bool AutoFreedayEnabled { get; set; } = true;
+
+    [JsonPropertyName("AutoFreedayDurationSeconds")]
+    public int AutoFreedayDurationSeconds { get; set; } = 180;
+
+    [JsonPropertyName("TeamSwapRequestTimeoutSeconds")]
+    public int TeamSwapRequestTimeoutSeconds { get; set; } = 20;
+
+    [JsonPropertyName("TeamSwapDeclineCooldownSeconds")]
+    public int TeamSwapDeclineCooldownSeconds { get; set; } = 60;
+
+    [JsonPropertyName("Beacon")]
+    public BeaconConfig Beacon { get; set; } = new();
 
     [JsonPropertyName("GuardOrders")]
     public GuardOrderConfig GuardOrders { get; set; } = new();
+}
+
+public sealed class BeaconConfig
+{
+    [JsonPropertyName("Enabled")]
+    public bool Enabled { get; set; }
+
+    [JsonPropertyName("IntervalSeconds")]
+    public float IntervalSeconds { get; set; } = 3.0f;
+
+    [JsonPropertyName("RadiusUnits")]
+    public float RadiusUnits { get; set; } = 90.0f;
+
+    [JsonPropertyName("SegmentCount")]
+    public int SegmentCount { get; set; } = 18;
+
+    [JsonPropertyName("Width")]
+    public float Width { get; set; } = 2.0f;
+
+    [JsonPropertyName("HeightOffset")]
+    public float HeightOffset { get; set; } = 8.0f;
+
+    [JsonPropertyName("Colors")]
+    public List<string> Colors { get; set; } =
+    [
+        "#FF3333",
+        "#FFCC33",
+        "#33FF66",
+        "#33CCFF",
+        "#CC66FF"
+    ];
+
+    [JsonPropertyName("Sound")]
+    public string Sound { get; set; } = string.Empty;
 }
 
 public sealed class GuardOrderConfig
@@ -63,6 +109,9 @@ public sealed class GuardOrderConfig
     // CS2 soundevent 이름입니다. 빈 문자열이면 소리를 재생하지 않습니다.
     [JsonPropertyName("NotificationSound")]
     public string NotificationSound { get; set; } = "UIPanorama.popup_accept";
+
+    [JsonPropertyName("NotificationSoundCooldownSeconds")]
+    public float NotificationSoundCooldownSeconds { get; set; } = 1.0f;
 
     [JsonPropertyName("OrderTextFormat")]
     public string OrderTextFormat { get; set; } =

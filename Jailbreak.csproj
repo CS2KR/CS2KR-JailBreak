@@ -7,16 +7,19 @@
 
     <RootNamespace>Jailbreak</RootNamespace>
     <AssemblyName>Jailbreak</AssemblyName>
-    <Version>0.2.6</Version>
+    <Version>0.2.17</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CounterStrikeSharp.API"
                       Version="1.0.369" />
+<<<<<<< Updated upstream
 
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"
                       Version="10.0.0"
                       PrivateAssets="all" />
+=======
+>>>>>>> Stashed changes
   </ItemGroup>
 
   <ItemGroup>

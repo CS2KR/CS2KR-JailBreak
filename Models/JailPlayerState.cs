@@ -19,8 +19,6 @@ public sealed class JailPlayerState
 
     public bool IsFreeday { get; set; }
 
-    public bool IsInLastRequest { get; set; }
-
     public void SaveOriginalRenderColor(Color color)
     {
         if (HasOriginalRenderColor)
@@ -42,7 +40,6 @@ public sealed class JailPlayerState
     {
         IsRebel = false;
         IsFreeday = false;
-        IsInLastRequest = false;
         ClearOriginalRenderColor();
     }
 }

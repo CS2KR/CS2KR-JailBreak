@@ -1,15 +1,18 @@
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
-using CounterStrikeSharp.API.Modules.Extensions;
 using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using Jailbreak.Config;
 using Jailbreak.Core;
+using Jailbreak.Features.Beacon;
+using Jailbreak.Features.Countdown;
+using Jailbreak.Features.Duel;
 using Jailbreak.Features.Freeday;
-using Jailbreak.Features.LastRequest;
+using Jailbreak.Features.Freekill;
+using Jailbreak.Features.Incidents;
 using Jailbreak.Features.Orders;
 using Jailbreak.Features.Rebel;
 using Jailbreak.Features.Teams;
@@ -33,21 +36,31 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         Guid.NewGuid().ToString("N")[..8];
     private readonly Dictionary<int, ulong> _stateKeysBySlot = new();
     private readonly Dictionary<ulong, DateTimeOffset> _awaitingCustomOrderInput = new();
+    private readonly HashSet<string> _pendingFreekillEvaluationReasons =
+        new(StringComparer.OrdinalIgnoreCase);
 
     private RoundManager? _roundManager;
     private PlayerStateManager? _playerStateManager;
     private GuardRatioManager? _guardRatioManager;
+    private TeamSwapManager? _teamSwapManager;
     private RebelManager? _rebelManager;
     private FreedayManager? _freedayManager;
-    private LastRequestManager? _lastRequestManager;
+    private FreekillTimeManager? _freekillTimeManager;
+    private OneVsOneDuelManager? _oneVsOneDuelManager;
+    private BeaconManager? _beaconManager;
+    private CountdownManager? _countdownManager;
+    private IncidentLogManager? _incidentLogManager;
     private GuardOrderManager? _guardOrderManager;
+    private OutputThrottleManager? _outputThrottleManager;
+    private CounterStrikeSharp.API.Modules.Timers.Timer? _autoFreedayTimer;
     private CounterStrikeSharp.API.Modules.Timers.Timer? _freedayHudTimer;
     private CounterStrikeSharp.API.Modules.Timers.Timer? _rebelColorTimer;
+    private bool _freekillEvaluationPending;
 
     public JailbreakConfig Config { get; set; } = new();
 
     public override string ModuleName => "Jailbreak";
-    public override string ModuleVersion => "0.2.6";
+    public override string ModuleVersion => "0.2.23";
     public override string ModuleAuthor => "Dang Geun";
     public override string ModuleDescription => "CS2 Jailbreak game mode core plugin";
 
@@ -78,6 +91,59 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         {
             config.CustomOrderInputTimeoutSeconds = 15;
         }
+
+        if (config.AutoFreedayDurationSeconds < 0)
+        {
+            config.AutoFreedayDurationSeconds = 0;
+        }
+
+        if (config.TeamSwapRequestTimeoutSeconds < 5)
+        {
+            config.TeamSwapRequestTimeoutSeconds = 20;
+        }
+
+        if (config.TeamSwapDeclineCooldownSeconds < 0)
+        {
+            config.TeamSwapDeclineCooldownSeconds = 0;
+        }
+
+        config.Beacon ??= new BeaconConfig();
+
+        if (config.Beacon.IntervalSeconds < 1.0f)
+        {
+            config.Beacon.IntervalSeconds = 3.0f;
+        }
+
+        if (config.Beacon.RadiusUnits < 16.0f)
+        {
+            config.Beacon.RadiusUnits = 90.0f;
+        }
+
+        if (config.Beacon.SegmentCount < 8)
+        {
+            config.Beacon.SegmentCount = 18;
+        }
+
+        if (config.Beacon.Width < 1.0f)
+        {
+            config.Beacon.Width = 2.0f;
+        }
+
+        if (config.Beacon.HeightOffset < 0.0f)
+        {
+            config.Beacon.HeightOffset = 8.0f;
+        }
+
+        config.Beacon.Colors =
+            (config.Beacon.Colors ?? [])
+                .Where(color => !string.IsNullOrWhiteSpace(color))
+                .Select(color => color.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+        config.Beacon.Sound =
+            config.Beacon.Sound?.Trim()
+            ?? string.Empty;
 
         config.GuardOrders ??= new GuardOrderConfig();
 
@@ -126,6 +192,11 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             config.GuardOrders.NotificationSound?.Trim()
             ?? string.Empty;
 
+        if (config.GuardOrders.NotificationSoundCooldownSeconds < 0)
+        {
+            config.GuardOrders.NotificationSoundCooldownSeconds = 0;
+        }
+
         config.GuardOrders.DefaultLocations =
             (config.GuardOrders.DefaultLocations
                 ?? [])
@@ -143,11 +214,15 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         Config = config;
 
         Logger.LogInformation(
-            "[Jailbreak] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, BotsBlockLastRequest: {BotsBlockLastRequest}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
+            "[Jailbreak] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, AutoFreedayEnabled: {AutoFreedayEnabled}, AutoFreedayDurationSeconds: {AutoFreedayDurationSeconds}, TeamSwapRequestTimeoutSeconds: {TeamSwapRequestTimeoutSeconds}, TeamSwapDeclineCooldownSeconds: {TeamSwapDeclineCooldownSeconds}, BeaconEnabled: {BeaconEnabled}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
             Config.PrisonersPerGuard,
             Config.DisableRadar,
             Config.DisableRadarCommand,
-            Config.BotsBlockLastRequest,
+            Config.AutoFreedayEnabled,
+            Config.AutoFreedayDurationSeconds,
+            Config.TeamSwapRequestTimeoutSeconds,
+            Config.TeamSwapDeclineCooldownSeconds,
+            Config.Beacon.Enabled,
             Config.GuardOrders.Enabled,
             Config.GuardOrders.RoundDurationSeconds,
             Config.GuardOrders.TimeStepSeconds);
@@ -158,23 +233,29 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _roundManager = new RoundManager(Logger, _pluginInstanceId);
         _playerStateManager = new PlayerStateManager();
         _guardRatioManager = new GuardRatioManager(Config.PrisonersPerGuard);
+        _teamSwapManager = new TeamSwapManager(
+            Logger,
+            TimeSpan.FromSeconds(Config.TeamSwapRequestTimeoutSeconds),
+            TimeSpan.FromSeconds(Config.TeamSwapDeclineCooldownSeconds));
         _rebelManager = new RebelManager(_playerStateManager, Logger);
         _freedayManager = new FreedayManager(
             _playerStateManager,
             _roundManager,
             Logger);
-        _lastRequestManager = new LastRequestManager(
-            this,
-            _playerStateManager,
-            _roundManager,
-            Config.BotsBlockLastRequest,
-            Logger);
+        _freekillTimeManager = new FreekillTimeManager();
+        _oneVsOneDuelManager = new OneVsOneDuelManager();
+        _beaconManager = new BeaconManager(this, Config.Beacon, Logger);
+        _countdownManager = new CountdownManager(this, Logger);
+        _incidentLogManager = new IncidentLogManager();
+        _outputThrottleManager = new OutputThrottleManager();
 
         _guardOrderManager = new GuardOrderManager(
             this,
             _roundManager,
             Config.GuardOrders,
-            Logger);
+            Logger,
+            () => _incidentLogManager?.GetLatestText() ?? string.Empty,
+            _outputThrottleManager);
 
         ApplyRadarPolicy("plugin load");
 
@@ -189,8 +270,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         RegisterListener<Listeners.OnMapEnd>(OnMapEnd);
         RegisterListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
         RegisterListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
-        RegisterListener<Listeners.OnPlayerButtonsChanged>(OnPlayerButtonsChanged);
-        RegisterListener<Listeners.OnPlayerTakeDamagePre>(OnPlayerTakeDamagePre);
 
         AddCommandListener("jointeam", OnJoinTeam, HookMode.Pre);
         AddCommandListener("say", OnCustomOrderChatCommand, HookMode.Pre);
@@ -233,14 +312,13 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         RemoveListener<Listeners.OnMapEnd>(OnMapEnd);
         RemoveListener<Listeners.OnClientPutInServer>(OnClientPutInServer);
         RemoveListener<Listeners.OnClientDisconnect>(OnClientDisconnect);
-        RemoveListener<Listeners.OnPlayerButtonsChanged>(OnPlayerButtonsChanged);
-        RemoveListener<Listeners.OnPlayerTakeDamagePre>(OnPlayerTakeDamagePre);
 
         RemoveCommandListener("jointeam", OnJoinTeam, HookMode.Pre);
         RemoveCommandListener("say", OnCustomOrderChatCommand, HookMode.Pre);
         RemoveCommandListener("say_team", OnCustomOrderChatCommand, HookMode.Pre);
         RemoveCommand("css_jb", OnJailbreakCommand);
 
+        StopAutoFreedayTimer();
         StopFreedayHudTimer();
         StopRebelColorTimer();
 
@@ -251,14 +329,25 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _playerStateManager?.Clear();
         _playerStateManager = null;
         _guardRatioManager = null;
+        _teamSwapManager?.Clear();
+        _teamSwapManager = null;
         _rebelManager = null;
         _freedayManager = null;
-        _lastRequestManager?.ResetRound();
-        _lastRequestManager = null;
+        _freekillTimeManager = null;
+        _oneVsOneDuelManager = null;
+        _beaconManager?.Stop();
+        _beaconManager = null;
+        _countdownManager?.Stop();
+        _countdownManager = null;
+        _incidentLogManager = null;
         _guardOrderManager?.Clear();
         _guardOrderManager = null;
+        _outputThrottleManager?.Clear();
+        _outputThrottleManager = null;
         _stateKeysBySlot.Clear();
         _awaitingCustomOrderInput.Clear();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
 
         Logger.LogInformation(
             "[Jailbreak] Plugin unloaded. PluginInstance: {PluginInstance}, HotReload: {HotReload}",
@@ -277,10 +366,10 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             return;
         }
 
-        if (_lastRequestManager?.HasActiveGame == true)
+        if (_freekillTimeManager?.IsActive == true)
         {
             commandInfo.ReplyToCommand(
-                "[Jailbreak] LR 진행 중에는 전체 자유시간을 시작할 수 없습니다.");
+                "[Jailbreak] 프리킬 시간 중에는 전체 자유시간을 시작할 수 없습니다.");
             return;
         }
 
@@ -288,6 +377,10 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             player,
             "전체 자유시간 시작",
             announce: false);
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _beaconManager?.Stop();
+        StopAutoFreedayTimer();
 
         if (_freedayManager?.StartGlobalFreeday() != true)
         {
@@ -299,8 +392,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _freedayManager?.ClearPersonalFreedays(
             "전체 자유시간 시작",
             announce: false);
-
-        _lastRequestManager?.Evaluate();
 
         StartFreedayHudTimer();
 
@@ -326,8 +417,9 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             return;
         }
 
+        StopAutoFreedayTimer();
         StopFreedayHudTimer();
-        ScheduleLastRequestEvaluation();
+        CaptureFreekillBaseline();
 
         commandInfo.ReplyToCommand(
             "[Jailbreak] 전체 자유시간을 종료했습니다.");
@@ -506,17 +598,46 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 }
                 return;
 
-            case "lr":
-            case "엘알":
-                if (action is "cancel" or "취소")
-                {
-                    OnCancelLastRequestCommand(player, commandInfo);
-                }
-                else
-                {
-                    OnLastRequestMenuCommand(player, commandInfo);
-                }
+            case "countdown":
+            case "count":
+            case "5":
+            case "카운트":
+                OnCountdownCommand(player, commandInfo, 5);
                 return;
+
+            case "incidents":
+            case "incident":
+            case "events":
+            case "사건":
+            case "최근사건":
+                OnIncidentsCommand(player, commandInfo);
+                return;
+
+            case "team":
+            case "팀":
+                switch (action)
+                {
+                    case "swap":
+                    case "exchange":
+                    case "교환":
+                        OnTeamSwapRequestCommand(player, commandInfo);
+                        return;
+                    case "accept":
+                    case "yes":
+                    case "수락":
+                        OnTeamSwapAcceptCommand(player, commandInfo);
+                        return;
+                    case "deny":
+                    case "decline":
+                    case "no":
+                    case "거절":
+                        OnTeamSwapDeclineCommand(player, commandInfo);
+                        return;
+                    default:
+                        commandInfo.ReplyToCommand(
+                            "[Jailbreak] 사용법: css_jb team <swap|accept|deny> [대상]");
+                        return;
+                }
 
             case "freeday":
             case "자유시간":
@@ -618,13 +739,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             }
             else
             {
-                if (_lastRequestManager?.HasActiveGame == true)
-                {
-                    trackedPlayer.PrintToChat(
-                        "[Jailbreak] LR 진행 중에는 새 간수 지시를 내릴 수 없습니다.");
-                    return HookResult.Handled;
-                }
-
                 bool adminOverride =
                     HasAdminPermission(trackedPlayer);
 
@@ -661,8 +775,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 if (_freedayManager?.EndGlobalFreeday(
                         "새 간수 지시") == true)
                 {
+                    StopAutoFreedayTimer();
                     StopFreedayHudTimer();
-                    ScheduleLastRequestEvaluation();
                 }
 
                 return HookResult.Handled;
@@ -670,6 +784,18 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         string normalized = text.ToLowerInvariant();
+
+        if (text.StartsWith('$'))
+        {
+            IssueDollarGuardOrder(trackedPlayer, text);
+            return HookResult.Handled;
+        }
+
+        if (text.StartsWith('+'))
+        {
+            IssueExtraGuardOrder(trackedPlayer, text);
+            return HookResult.Handled;
+        }
 
         if (normalized is "!명령" or "/명령" or "!지시" or "/지시" or "!order" or "/order")
         {
@@ -683,9 +809,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             return HookResult.Handled;
         }
 
-        if (normalized is "!lr" or "/lr" or "!엘알" or "/엘알")
+        if (normalized is "!5" or "/5")
         {
-            OpenLastRequestMenu(trackedPlayer);
+            StartGuardCountdown(trackedPlayer, 5, "시작", trackedPlayer.PrintToChat);
+            return HookResult.Handled;
+        }
+
+        if (TryHandleTeamSwapChatCommand(trackedPlayer, text))
+        {
             return HookResult.Handled;
         }
 
@@ -696,6 +827,89 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
 
         return HookResult.Continue;
+    }
+
+    private void IssueDollarGuardOrder(
+        CCSPlayerController player,
+        string text)
+    {
+        bool adminOverride =
+            HasAdminPermission(player);
+
+        if (!EnsureGuardOrderRoundUsable(
+                player,
+                adminOverride,
+                "dollar guard order") ||
+            _guardOrderManager?.CanUse(
+                player,
+                adminOverride) != true)
+        {
+            player.PrintToChat(
+                "[Jailbreak] 간수 또는 권한이 있는 관리자만 지시할 수 있습니다.");
+            return;
+        }
+
+        if (_guardOrderManager is null)
+        {
+            player.PrintToChat(
+                "[Jailbreak] 간수 지시 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        if (!_guardOrderManager.IssueDollarText(
+                player,
+                text,
+                out string error))
+        {
+            player.PrintToChat(
+                $"[Jailbreak] 빠른 지시 실패: {error}");
+            return;
+        }
+
+        if (_freedayManager?.EndGlobalFreeday(
+                "새 간수 지시") == true)
+        {
+            StopAutoFreedayTimer();
+            StopFreedayHudTimer();
+        }
+    }
+
+    private void IssueExtraGuardOrder(
+        CCSPlayerController player,
+        string text)
+    {
+        bool adminOverride =
+            HasAdminPermission(player);
+
+        if (!EnsureGuardOrderRoundUsable(
+                player,
+                adminOverride,
+                "extra guard order") ||
+            _guardOrderManager?.CanUse(
+                player,
+                adminOverride) != true)
+        {
+            player.PrintToChat(
+                "[Jailbreak] 간수 또는 권한이 있는 관리자만 추가명령을 사용할 수 있습니다.");
+            return;
+        }
+
+        if (_guardOrderManager is null)
+        {
+            player.PrintToChat(
+                "[Jailbreak] 간수 지시 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        if (!_guardOrderManager.SetExtraText(
+                player,
+                text,
+                out string error))
+        {
+            player.PrintToChat(
+                $"[Jailbreak] 추가명령 실패: {error}");
+            return;
+        }
     }
 
     private static string NormalizeChatText(string rawText)
@@ -743,25 +957,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         return string.Join(" ", parts).Trim();
     }
 
-    private void OnLastRequestMenuCommand(
-        CCSPlayerController? player,
-        CommandInfo commandInfo)
-    {
-        if (player is null)
-        {
-            commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
-            return;
-        }
-
-        OpenLastRequestMenu(player);
-    }
-
-    private void OpenLastRequestMenu(CCSPlayerController player)
-    {
-        _lastRequestManager?.OpenMenu(player);
-    }
-
     private void OnStatusCommand(
         CCSPlayerController? player,
         CommandInfo commandInfo)
@@ -787,10 +982,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 ? $"간수 지시 진행 중: {_guardOrderManager.State.DisplayText}"
                 : "간수 지시 없음";
 
-        string lrState =
-            _lastRequestManager?.GetStatusText()
-            ?? "없음";
-
         int personalFreedayCount =
             _freedayManager?.GetPersonalFreedayNames().Count
             ?? 0;
@@ -800,7 +991,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             ?? 0;
 
         commandInfo.ReplyToCommand(
-            $"[Jailbreak] {roundState} / {freedayState} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / LR: {lrState}");
+            $"[Jailbreak] {roundState} / {freedayState} / 프리킬: {_freekillTimeManager?.StatusText ?? "없음"} / 1:1: {_oneVsOneDuelManager?.StatusText ?? "없음"} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / 카운트다운: {_countdownManager?.StatusText ?? "없음"}");
 
         int alivePrisoners = 0;
         int aliveGuards = 0;
@@ -865,16 +1056,15 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         commandInfo.ReplyToCommand(
             $"[Jailbreak] 간수 비율: humanCT={humanGuards}/{maximumHumanGuards}, humanT={humanPrisoners}, ratio=1:{_guardRatioManager?.PrisonersPerGuard ?? Config.PrisonersPerGuard}, adminBypass=true, botsExcluded=true");
 
-        commandInfo.ReplyToCommand(
-            $"[Jailbreak] LR 진단: {_lastRequestManager?.GetDiagnosticText() ?? "없음"}");
+        PrintRecentIncidents(commandInfo.ReplyToCommand, maxCount: 3);
 
         PrintGameRulesDiagnostics(commandInfo.ReplyToCommand);
     }
 
     private static void PrintHelp(Action<string> reply)
     {
-        reply("[Jailbreak] 플레이어: !지시, !lr, !도움말");
-        reply("[Jailbreak] 관리: css_jb status | reset | order [cancel] | lr [cancel]");
+        reply("[Jailbreak] 플레이어: !지시, !5, !도움말");
+        reply("[Jailbreak] 관리: css_jb status | reset | order [cancel] | countdown | incidents");
         reply("[Jailbreak] 자유시간: css_jb freeday <start|end|give|remove|list> [대상]");
         reply("[Jailbreak] 반란자: css_jb rebel <add|remove|list> [대상]");
         reply("[Jailbreak] 권한은 Jailbreak.json의 AdminPermissions에서 설정합니다.");
@@ -895,6 +1085,281 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         commandInfo.ReplyToCommand(
             "[Jailbreak] 라운드 진행 상태를 제외한 Jailbreak 상태를 초기화했습니다.");
+    }
+
+    private void OnCountdownCommand(
+        CCSPlayerController? player,
+        CommandInfo commandInfo,
+        int seconds)
+    {
+        if (player is null)
+        {
+            commandInfo.ReplyToCommand(
+                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            return;
+        }
+
+        StartGuardCountdown(
+            player,
+            seconds,
+            "시작",
+            commandInfo.ReplyToCommand);
+    }
+
+    private void StartGuardCountdown(
+        CCSPlayerController player,
+        int seconds,
+        string label,
+        Action<string> reply)
+    {
+        bool adminOverride = HasAdminPermission(player);
+
+        if (_freekillTimeManager?.IsActive == true)
+        {
+            reply("[Jailbreak] 프리킬 시간 중에는 카운트다운을 시작할 수 없습니다.");
+            return;
+        }
+
+        if (!EnsureGuardOrderRoundUsable(
+                player,
+                adminOverride,
+                "countdown command") ||
+            _guardOrderManager?.CanUse(
+                player,
+                adminOverride) != true)
+        {
+            reply("[Jailbreak] 간수 또는 권한이 있는 관리자만 카운트다운을 사용할 수 있습니다.");
+            return;
+        }
+
+        if (_countdownManager is null)
+        {
+            reply("[Jailbreak] 카운트다운 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        if (!_countdownManager.Start(
+                player,
+                seconds,
+                label,
+                out string error))
+        {
+            reply($"[Jailbreak] 카운트다운 실패: {error}");
+            return;
+        }
+
+        AddIncident($"{player.PlayerName}님이 {seconds}초 카운트다운을 시작했습니다.");
+    }
+
+    private bool TryHandleTeamSwapChatCommand(
+        CCSPlayerController player,
+        string text)
+    {
+        string normalized = text.Trim();
+        string lowered = normalized.ToLowerInvariant();
+
+        if (lowered is "!수락" or "/수락" or "!accept" or "/accept")
+        {
+            AcceptTeamSwap(player, player.PrintToChat);
+            return true;
+        }
+
+        if (lowered is "!거절" or "/거절" or "!deny" or "/deny")
+        {
+            DeclineTeamSwap(player, player.PrintToChat);
+            return true;
+        }
+
+        string[] prefixes =
+        [
+            "!교환 ",
+            "/교환 ",
+            "!swap ",
+            "/swap "
+        ];
+
+        foreach (string prefix in prefixes)
+        {
+            if (!normalized.StartsWith(
+                    prefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            string targetQuery = normalized[prefix.Length..].Trim();
+            RequestTeamSwap(player, targetQuery, player.PrintToChat);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void OnTeamSwapRequestCommand(
+        CCSPlayerController? player,
+        CommandInfo commandInfo)
+    {
+        if (player is null)
+        {
+            commandInfo.ReplyToCommand(
+                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            return;
+        }
+
+        RequestTeamSwap(
+            player,
+            JoinArguments(commandInfo, 3),
+            commandInfo.ReplyToCommand);
+    }
+
+    private void OnTeamSwapAcceptCommand(
+        CCSPlayerController? player,
+        CommandInfo commandInfo)
+    {
+        if (player is null)
+        {
+            commandInfo.ReplyToCommand(
+                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            return;
+        }
+
+        AcceptTeamSwap(player, commandInfo.ReplyToCommand);
+    }
+
+    private void OnTeamSwapDeclineCommand(
+        CCSPlayerController? player,
+        CommandInfo commandInfo)
+    {
+        if (player is null)
+        {
+            commandInfo.ReplyToCommand(
+                "[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            return;
+        }
+
+        DeclineTeamSwap(player, commandInfo.ReplyToCommand);
+    }
+
+    private void RequestTeamSwap(
+        CCSPlayerController player,
+        string targetQuery,
+        Action<string> reply)
+    {
+        if (!TeamManager.IsHumanPlayer(player))
+        {
+            reply("[Jailbreak] 이 명령은 게임 안에서 사용하세요.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(targetQuery))
+        {
+            reply("[Jailbreak] 사용법: css_jb team swap <대상>");
+            return;
+        }
+
+        if (_teamSwapManager is null)
+        {
+            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        CCSPlayerController? target =
+            _teamSwapManager.FindTarget(targetQuery);
+
+        if (target is null)
+        {
+            reply("[Jailbreak] 대상 플레이어를 한 명으로 특정할 수 없습니다.");
+            return;
+        }
+
+        if (!_teamSwapManager.RequestSwap(
+                player,
+                target,
+                out string error))
+        {
+            reply($"[Jailbreak] 팀교환 요청 실패: {error}");
+            return;
+        }
+    }
+
+    private void AcceptTeamSwap(
+        CCSPlayerController player,
+        Action<string> reply)
+    {
+        if (_teamSwapManager is null)
+        {
+            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        if (!_teamSwapManager.Accept(
+                player,
+                out string error))
+        {
+            reply($"[Jailbreak] 팀교환 수락 실패: {error}");
+            return;
+        }
+
+        AddIncident($"{player.PlayerName}님이 팀교환 요청을 수락했습니다.");
+    }
+
+    private void DeclineTeamSwap(
+        CCSPlayerController player,
+        Action<string> reply)
+    {
+        if (_teamSwapManager is null)
+        {
+            reply("[Jailbreak] 팀교환 관리자가 초기화되지 않았습니다.");
+            return;
+        }
+
+        if (!_teamSwapManager.Decline(
+                player,
+                out string error))
+        {
+            reply($"[Jailbreak] 팀교환 거절 실패: {error}");
+        }
+    }
+
+    private void OnIncidentsCommand(
+        CCSPlayerController? player,
+        CommandInfo commandInfo)
+    {
+        if (player is not null &&
+            (!player.IsValid || player.IsBot || player.IsHLTV))
+        {
+            return;
+        }
+
+        PrintRecentIncidents(commandInfo.ReplyToCommand, maxCount: 10);
+    }
+
+    private void PrintRecentIncidents(
+        Action<string> reply,
+        int maxCount)
+    {
+        IReadOnlyList<JailIncident> incidents =
+            _incidentLogManager?.GetRecent()
+            ?? [];
+
+        if (incidents.Count == 0)
+        {
+            reply("[Jailbreak] 최근 사건이 없습니다.");
+            return;
+        }
+
+        foreach (JailIncident incident in incidents.Take(maxCount))
+        {
+            TimeSpan age = DateTimeOffset.UtcNow - incident.CreatedAt;
+            int secondsAgo = Math.Max(0, (int)age.TotalSeconds);
+            reply($"[Jailbreak] 최근 사건: {secondsAgo}초 전 - {incident.Text}");
+        }
+    }
+
+    private void AddIncident(string text)
+    {
+        _incidentLogManager?.Add(text);
+        _guardOrderManager?.DisplayHud();
     }
 
     private void OnMarkRebelCommand(
@@ -948,6 +1413,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         commandInfo.ReplyToCommand(
             $"[Jailbreak] {target.PlayerName}을 반란자로 지정했습니다.");
+
+        AddIncident($"{target.PlayerName}님이 반란자가 되었습니다. 사유: 관리자 지정");
     }
 
     private void OnUnmarkRebelCommand(
@@ -997,6 +1464,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         commandInfo.ReplyToCommand(
             $"[Jailbreak] {target.PlayerName}의 반란자 상태를 해제했습니다.");
+
+        AddIncident($"{target.PlayerName}님의 반란자 상태가 해제되었습니다.");
     }
 
     private void OnRebelListCommand(
@@ -1023,30 +1492,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         commandInfo.ReplyToCommand(
             $"[Jailbreak] 반란자: {string.Join(", ", rebels)}");
-    }
-
-    private void OnCancelLastRequestCommand(
-        CCSPlayerController? player,
-        CommandInfo commandInfo)
-    {
-        if (!HasAdminPermission(player))
-        {
-            commandInfo.ReplyToCommand(
-                "[Jailbreak] 이 명령을 사용할 권한이 없습니다.");
-            return;
-        }
-
-        if (_lastRequestManager?.Cancel(
-                "관리자 취소",
-                announce: true) != true)
-        {
-            commandInfo.ReplyToCommand(
-                "[Jailbreak] 현재 진행 중인 LR이 없습니다.");
-            return;
-        }
-
-        commandInfo.ReplyToCommand(
-            "[Jailbreak] LR을 취소했습니다.");
     }
 
     private void OnGuardOrderMenuCommand(
@@ -1103,23 +1548,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         bool adminOverride =
             HasAdminPermission(player);
 
-        if (_lastRequestManager?.HasActiveGame == true)
-        {
-            const string message =
-                "[Jailbreak] LR 진행 중에는 새 간수 지시를 내릴 수 없습니다.";
-
-            if (reply is not null)
-            {
-                reply(message);
-            }
-            else
-            {
-                player.PrintToChat(message);
-            }
-
-            return;
-        }
-
         if (!EnsureGuardOrderRoundUsable(
                 player,
                 adminOverride,
@@ -1174,7 +1602,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                     selectedPlayer,
                     HasAdminPermission(selectedPlayer),
                     "guard order menu selection") &&
-                _lastRequestManager?.HasActiveGame != true &&
                 _guardOrderManager?.CanUse(
                     selectedPlayer,
                     HasAdminPermission(selectedPlayer)) == true,
@@ -1183,8 +1610,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 if (_freedayManager?.EndGlobalFreeday(
                         "새 간수 지시") == true)
                 {
+                    StopAutoFreedayTimer();
                     StopFreedayHudTimer();
-                    ScheduleLastRequestEvaluation();
                 }
             },
             selectedPlayer =>
@@ -1544,16 +1971,24 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
     private void ResetModeState(string reason)
     {
+        StopAutoFreedayTimer();
         StopFreedayHudTimer();
         _rebelManager?.RestoreAllRebels();
         _freedayManager?.EndGlobalFreeday(reason);
         _freedayManager?.ClearPersonalFreedays(
             reason,
             announce: false);
-        _lastRequestManager?.ResetRound();
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _beaconManager?.Stop();
+        _countdownManager?.Stop();
         _guardOrderManager?.Cancel(null, reason, announce: false);
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
+        _teamSwapManager?.Clear();
+        _incidentLogManager?.Clear();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
         _playerStateManager?.ResetRoundStates();
 
         Logger.LogWarning(
@@ -1583,6 +2018,73 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 _freedayManager?.DisplayGlobalFreedayHud();
             },
             TimerFlags.REPEAT | TimerFlags.STOP_ON_MAPCHANGE);
+    }
+
+    private void StartAutomaticFreedayIfConfigured()
+    {
+        StopAutoFreedayTimer();
+
+        if (!Config.AutoFreedayEnabled ||
+            Config.AutoFreedayDurationSeconds <= 0 ||
+            _roundManager?.State.IsActive != true ||
+            _freekillTimeManager?.IsActive == true)
+        {
+            return;
+        }
+
+        _guardOrderManager?.Cancel(
+            null,
+            "자동 자유시간 시작",
+            announce: false);
+        _freekillTimeManager?.Reset();
+
+        if (_freedayManager?.StartGlobalFreeday() != true)
+        {
+            return;
+        }
+
+        _freedayManager?.ClearPersonalFreedays(
+            "자동 자유시간 시작",
+            announce: false);
+        StartFreedayHudTimer();
+        AddIncident(
+            $"자동 자유시간이 시작되었습니다. {Config.AutoFreedayDurationSeconds}초");
+
+        _autoFreedayTimer = AddTimer(
+            Config.AutoFreedayDurationSeconds,
+            EndAutomaticFreeday,
+            TimerFlags.STOP_ON_MAPCHANGE);
+
+        Logger.LogInformation(
+            "[Jailbreak] Automatic freeday started. DurationSeconds: {DurationSeconds}, Round: {RoundNumber}",
+            Config.AutoFreedayDurationSeconds,
+            _roundManager.State.RoundNumber);
+    }
+
+    private void EndAutomaticFreeday()
+    {
+        _autoFreedayTimer = null;
+
+        if (_roundManager?.State.IsActive != true ||
+            _freekillTimeManager?.IsActive == true ||
+            _freedayManager?.EndGlobalFreeday("자동 종료") != true)
+        {
+            return;
+        }
+
+        StopFreedayHudTimer();
+        CaptureFreekillBaseline();
+        AddIncident("자동 자유시간이 종료되었습니다.");
+
+        Logger.LogInformation(
+            "[Jailbreak] Automatic freeday ended. Round: {RoundNumber}",
+            _roundManager.State.RoundNumber);
+    }
+
+    private void StopAutoFreedayTimer()
+    {
+        _autoFreedayTimer?.Kill();
+        _autoFreedayTimer = null;
     }
 
     private void StopFreedayHudTimer()
@@ -1712,13 +2214,24 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         StopFreedayHudTimer();
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
+        _teamSwapManager?.Clear();
         _rebelManager?.RestoreAllRebels();
         _freedayManager?.ClearPersonalFreedays(
             "라운드 시작",
             announce: false);
-        _lastRequestManager?.ResetRound();
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _beaconManager?.Stop();
+        _countdownManager?.Stop();
+        _incidentLogManager?.Clear();
         _playerStateManager?.ResetRoundStates();
         _roundManager?.HandleRoundStart();
+        CaptureFreekillBaseline();
+        StartAutomaticFreedayIfConfigured();
+        _guardOrderManager?.DisplayHud();
+        ScheduleFreekillEvaluation("round start");
 
         Logger.LogInformation(
             "[Jailbreak] Event handled: round_start. PluginInstance: {PluginInstance}, PluginRoundActiveAfter: {RoundActive}, Round: {RoundNumber}",
@@ -1742,19 +2255,26 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         LogGameRulesDiagnostics("event round_end before state update");
 
+        StopAutoFreedayTimer();
         _awaitingCustomOrderInput.Clear();
+        _teamSwapManager?.Clear();
         _rebelManager?.RestoreAllRebels();
         _freedayManager?.EndGlobalFreeday("라운드 종료");
         _freedayManager?.ClearPersonalFreedays(
             "라운드 종료",
             announce: false);
-        _lastRequestManager?.Clear();
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _countdownManager?.Stop();
         _guardOrderManager?.Cancel(null, "라운드 종료", announce: false);
         StopFreedayHudTimer();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
         _roundManager?.HandleRoundEnd();
         return HookResult.Continue;
     }
 
+<<<<<<< Updated upstream
     private HookResult OnPlayerTakeDamagePre(
         CCSPlayerPawn victimPawn,
         CTakeDamageInfo damageInfo)
@@ -1833,26 +2353,25 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         return null;
     }
 
+=======
+>>>>>>> Stashed changes
     private HookResult OnPlayerHurt(
         EventPlayerHurt @event,
         GameEventInfo info)
     {
-        if (_lastRequestManager?.HasActiveGame == true &&
-            _lastRequestManager.IsParticipant(@event.Attacker) &&
-            _lastRequestManager.IsParticipant(@event.Userid))
-        {
-            return HookResult.Continue;
-        }
-
         _freedayManager?.HandlePlayerDamage(
             @event.Attacker,
             @event.Userid,
             @event.DmgHealth);
 
-        _rebelManager?.HandleGuardDamage(
+        if (_rebelManager?.HandleGuardDamage(
             @event.Attacker,
             @event.Userid,
-            @event.DmgHealth);
+            @event.DmgHealth) == true &&
+            @event.Attacker is not null)
+        {
+            AddIncident($"{@event.Attacker.PlayerName}님이 반란자가 되었습니다.");
+        }
 
         return HookResult.Continue;
     }
@@ -1866,10 +2385,8 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _awaitingCustomOrderInput.Remove(@event.Userid!.SteamID);
         }
 
-        _lastRequestManager?.HandlePlayerDeath(@event.Userid);
         _rebelManager?.RestoreRebel(@event.Userid);
-
-        ScheduleLastRequestEvaluation();
+        ScheduleFreekillEvaluation("player death");
 
         return HookResult.Continue;
     }
@@ -1895,10 +2412,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _awaitingCustomOrderInput.Remove(trackedPlayer.SteamID);
         }
 
-        _lastRequestManager?.ClearPlayer(
-            trackedPlayer,
-            "팀 변경",
-            announce: true);
         _playerStateManager?.GetOrCreate(trackedPlayer)?.ResetRoundState();
 
         if (PlayerStateManager.TryGetStateKey(
@@ -1916,14 +2429,14 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             }
         }
 
-        ScheduleLastRequestEvaluation();
-
         Logger.LogInformation(
             "[Jailbreak] Player changed team. Player: {PlayerName}, SteamID: {SteamId}, OldTeam: {OldTeam}, NewTeam: {NewTeam}",
             trackedPlayer.PlayerName,
             trackedPlayer.SteamID,
             @event.Oldteam,
             @event.Team);
+
+        ScheduleFreekillEvaluation("player team");
 
         return HookResult.Continue;
     }
@@ -1936,12 +2449,21 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             mapName,
             Server.MapName);
 
+        StopAutoFreedayTimer();
+        StopFreedayHudTimer();
         _rebelManager?.RestoreAllRebels();
-        _lastRequestManager?.ResetRound();
+        _countdownManager?.Stop();
+        _incidentLogManager?.Clear();
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _beaconManager?.Stop();
         _playerStateManager?.Clear();
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
+        _teamSwapManager?.Clear();
         _stateKeysBySlot.Clear();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
         TrackConnectedPlayers();
         StartRebelColorTimer();
         _roundManager?.HandleMapStart(mapName);
@@ -1963,14 +2485,21 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
 
         LogGameRulesDiagnostics("listener map_end before cleanup");
 
+        StopAutoFreedayTimer();
         StopFreedayHudTimer();
         _rebelManager?.RestoreAllRebels();
-        _lastRequestManager?.ResetRound();
+        _freekillTimeManager?.Reset();
+        _oneVsOneDuelManager?.Reset();
+        _beaconManager?.Stop();
+        _countdownManager?.Stop();
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
+        _teamSwapManager?.Clear();
         _roundManager?.HandleMapEnd();
         _playerStateManager?.Clear();
         _stateKeysBySlot.Clear();
+        _pendingFreekillEvaluationReasons.Clear();
+        _freekillEvaluationPending = false;
     }
 
     private void OnClientPutInServer(int playerSlot)
@@ -2005,10 +2534,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         CCSPlayerController? player = Utilities.GetPlayerFromSlot(playerSlot);
 
         _rebelManager?.RestoreRebel(player);
-        _lastRequestManager?.ClearPlayer(
-            player,
-            "접속 종료",
-            announce: true);
 
         if (!_stateKeysBySlot.Remove(playerSlot, out ulong stateKey))
         {
@@ -2028,33 +2553,17 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         if (steamId != 0)
         {
             _awaitingCustomOrderInput.Remove(steamId);
-            _lastRequestManager?.ClearPlayer(
-                steamId,
-                "접속 종료",
-                announce: true);
+            _teamSwapManager?.RemovePlayer(steamId);
         }
 
         _playerStateManager?.RemoveStateKey(stateKey);
-        ScheduleLastRequestEvaluation();
+        ScheduleFreekillEvaluation("client disconnect");
 
         Logger.LogInformation(
             "[Jailbreak] Player disconnected. SteamID: {SteamId}, StateKey: {StateKey}, Slot: {Slot}",
             steamId,
             stateKey,
             playerSlot);
-    }
-
-    private void OnPlayerButtonsChanged(
-        CCSPlayerController player,
-        PlayerButtons pressed,
-        PlayerButtons released)
-    {
-        if ((pressed & PlayerButtons.Zoom) == 0)
-        {
-            return;
-        }
-
-        _lastRequestManager?.HandleZoomPressed(player);
     }
 
     private void TrackConnectedPlayers()
@@ -2091,12 +2600,216 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         return TeamManager.IsGameplayParticipant(player);
     }
 
-    private void ScheduleLastRequestEvaluation()
+    private void CaptureFreekillBaseline()
     {
+        if (_freekillTimeManager is null ||
+            _roundManager?.State.IsActive != true ||
+            _roundManager.State.IsFreedayRound)
+        {
+            return;
+        }
+
+        JailAliveCounts counts = GetAliveCounts();
+        _freekillTimeManager.CaptureBaseline(counts.AliveGuards);
+    }
+
+    private void ScheduleFreekillEvaluation(string reason)
+    {
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            _pendingFreekillEvaluationReasons.Add(reason.Trim());
+        }
+
+        if (_freekillEvaluationPending)
+        {
+            return;
+        }
+
+        _freekillEvaluationPending = true;
+
         AddTimer(
             0.1f,
-            () => _lastRequestManager?.Evaluate(),
+            () =>
+            {
+                string joinedReasons = _pendingFreekillEvaluationReasons.Count == 0
+                    ? reason
+                    : string.Join(", ", _pendingFreekillEvaluationReasons);
+
+                _pendingFreekillEvaluationReasons.Clear();
+                _freekillEvaluationPending = false;
+                EvaluateFreekillTime(joinedReasons);
+            },
             TimerFlags.STOP_ON_MAPCHANGE);
     }
+
+    private void EvaluateFreekillTime(string reason)
+    {
+        if (_freekillTimeManager is null ||
+            _roundManager?.State.IsActive != true)
+        {
+            return;
+        }
+
+        JailAliveCounts counts = GetAliveCounts();
+
+        if (_freekillTimeManager.Evaluate(
+                counts.AliveGuards,
+                counts.AlivePrisoners,
+                out bool ended))
+        {
+            string guardText = string.IsNullOrWhiteSpace(counts.LastGuardName)
+                ? "마지막 간수"
+                : $"마지막 간수: {counts.LastGuardName}";
+
+            StopAutoFreedayTimer();
+            if (_freedayManager?.EndGlobalFreeday(
+                    "프리킬 시간 시작") == true)
+            {
+                StopFreedayHudTimer();
+            }
+
+            _guardOrderManager?.SetPriorityHud("프리킬 시간 입니다!");
+            BroadcastChat($"[Jailbreak] 프리킬 시간입니다. {guardText}");
+            PrintCenterAll($"[Jailbreak]\n프리킬 시간입니다\n{guardText}");
+            AddIncident($"프리킬 시간이 시작되었습니다. {guardText}");
+
+            Logger.LogInformation(
+                "[Jailbreak] Freekill time started. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}, LastGuard: {LastGuard}",
+                reason,
+                counts.AliveGuards,
+                counts.AlivePrisoners,
+                counts.LastGuardName);
+        }
+        else if (ended)
+        {
+            _guardOrderManager?.ClearPriorityHud();
+            AddIncident("프리킬 시간이 종료되었습니다.");
+
+            Logger.LogInformation(
+                "[Jailbreak] Freekill time ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
+                reason,
+                counts.AliveGuards,
+                counts.AlivePrisoners);
+        }
+
+        EvaluateOneVsOneDuel(counts, reason);
+    }
+
+    private void EvaluateOneVsOneDuel(
+        JailAliveCounts counts,
+        string reason)
+    {
+        if (_oneVsOneDuelManager is null ||
+            _roundManager?.State.IsActive != true)
+        {
+            return;
+        }
+
+        if (_oneVsOneDuelManager.Evaluate(
+                counts.AlivePrisoners,
+                counts.AliveGuards,
+                counts.LastPrisonerSteamId,
+                counts.LastGuardSteamId,
+                counts.LastPrisonerName,
+                counts.LastGuardName,
+                out bool ended))
+        {
+            string participantText =
+                _oneVsOneDuelManager.GetParticipantText();
+
+            _beaconManager?.StartOneVsOne(
+                counts.LastPrisonerSteamId,
+                counts.LastGuardSteamId);
+            BroadcastChat($"[Jailbreak] 1:1 상황입니다. {participantText}");
+            AddIncident($"1:1 상황이 시작되었습니다. {participantText}");
+
+            Logger.LogInformation(
+                "[Jailbreak] One-vs-one duel started. Reason: {Reason}, Prisoner: {Prisoner}, Guard: {Guard}",
+                reason,
+                counts.LastPrisonerName,
+                counts.LastGuardName);
+        }
+        else if (ended)
+        {
+            _beaconManager?.Stop();
+            AddIncident("1:1 상황이 종료되었습니다.");
+
+            Logger.LogInformation(
+                "[Jailbreak] One-vs-one duel ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
+                reason,
+                counts.AliveGuards,
+                counts.AlivePrisoners);
+        }
+    }
+
+    private static JailAliveCounts GetAliveCounts()
+    {
+        int alivePrisoners = 0;
+        int aliveGuards = 0;
+        string? lastPrisonerName = null;
+        string? lastGuardName = null;
+        ulong lastPrisonerSteamId = 0;
+        ulong lastGuardSteamId = 0;
+
+        foreach (CCSPlayerController player in Utilities.GetPlayers())
+        {
+            if (!TeamManager.IsGameplayParticipant(player) ||
+                !player.PawnIsAlive)
+            {
+                continue;
+            }
+
+            if (TeamManager.IsPrisoner(player))
+            {
+                alivePrisoners++;
+                lastPrisonerName = player.PlayerName;
+                lastPrisonerSteamId = player.SteamID;
+            }
+            else if (TeamManager.IsGuard(player))
+            {
+                aliveGuards++;
+                lastGuardName = player.PlayerName;
+                lastGuardSteamId = player.SteamID;
+            }
+        }
+
+        return new JailAliveCounts(
+            alivePrisoners,
+            aliveGuards,
+            lastPrisonerName,
+            lastGuardName,
+            lastPrisonerSteamId,
+            lastGuardSteamId);
+    }
+
+    private static void BroadcastChat(string message)
+    {
+        foreach (CCSPlayerController player in Utilities.GetPlayers())
+        {
+            if (TeamManager.IsHumanPlayer(player))
+            {
+                player.PrintToChat(message);
+            }
+        }
+    }
+
+    private static void PrintCenterAll(string message)
+    {
+        foreach (CCSPlayerController player in Utilities.GetPlayers())
+        {
+            if (TeamManager.IsHumanPlayer(player))
+            {
+                player.PrintToCenter(message);
+            }
+        }
+    }
+
+    private sealed record JailAliveCounts(
+        int AlivePrisoners,
+        int AliveGuards,
+        string? LastPrisonerName,
+        string? LastGuardName,
+        ulong LastPrisonerSteamId,
+        ulong LastGuardSteamId);
 
 }

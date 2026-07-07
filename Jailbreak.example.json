@@ -7,7 +7,26 @@
   "CustomOrderInputTimeoutSeconds": 15,
   "DisableRadar": true,
   "DisableRadarCommand": "sv_disable_radar 1",
-  "BotsBlockLastRequest": true,
+  "AutoFreedayEnabled": true,
+  "AutoFreedayDurationSeconds": 180,
+  "TeamSwapRequestTimeoutSeconds": 20,
+  "TeamSwapDeclineCooldownSeconds": 60,
+  "Beacon": {
+    "Enabled": false,
+    "IntervalSeconds": 3.0,
+    "RadiusUnits": 90.0,
+    "SegmentCount": 18,
+    "Width": 2.0,
+    "HeightOffset": 8.0,
+    "Colors": [
+      "#FF3333",
+      "#FFCC33",
+      "#33FF66",
+      "#33CCFF",
+      "#CC66FF"
+    ],
+    "Sound": ""
+  },
   "GuardOrders": {
     "Enabled": true,
     "RoundDurationSeconds": 480,
@@ -18,6 +37,7 @@
     "HudRefreshSeconds": 0.5,
     "HudPacketDurationSeconds": 2,
     "NotificationSound": "UIPanorama.popup_accept",
+    "NotificationSoundCooldownSeconds": 1.0,
     "OrderTextFormat": "{location}로 {time}까지 이동",
     "DefaultLocations": [
       "중앙",

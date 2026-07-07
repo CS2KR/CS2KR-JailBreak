@@ -8,6 +8,7 @@ using Jailbreak.Core;
 using Jailbreak.Features.Teams;
 using Jailbreak.Models;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 
 namespace Jailbreak.Features.Orders;
 
@@ -17,16 +18,21 @@ public sealed class GuardOrderManager
     private readonly RoundManager _roundManager;
     private readonly GuardOrderConfig _config;
     private readonly ILogger _logger;
+    private readonly Func<string> _latestIncidentProvider;
+    private readonly OutputThrottleManager _outputThrottleManager;
     private readonly Dictionary<ulong, DateTimeOffset> _lastCommandAt = new();
     private CounterStrikeSharp.API.Modules.Timers.Timer? _hudTimer;
     private readonly Dictionary<ulong, int> _shownHudRevisionBySteamId = new();
+    private string _priorityHudText = string.Empty;
     private int _hudRevision;
 
     public GuardOrderManager(
         BasePlugin plugin,
         RoundManager roundManager,
         GuardOrderConfig config,
-        ILogger logger)
+        ILogger logger,
+        Func<string>? latestIncidentProvider = null,
+        OutputThrottleManager? outputThrottleManager = null)
     {
         ArgumentNullException.ThrowIfNull(plugin);
         ArgumentNullException.ThrowIfNull(roundManager);
@@ -37,6 +43,8 @@ public sealed class GuardOrderManager
         _roundManager = roundManager;
         _config = config;
         _logger = logger;
+        _latestIncidentProvider = latestIncidentProvider ?? (() => string.Empty);
+        _outputThrottleManager = outputThrottleManager ?? new OutputThrottleManager();
     }
 
     public GuardOrderState State { get; } = new();
@@ -291,6 +299,193 @@ public sealed class GuardOrderManager
         return true;
     }
 
+    public bool IssueDollarText(
+        CCSPlayerController issuer,
+        string text,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (!text.StartsWith('$'))
+        {
+            error = "$로 시작하는 빠른 시간 지시가 아닙니다.";
+            return false;
+        }
+
+        string body = text[1..].Trim();
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            error = "$ 뒤에 시간과 지시 내용을 입력하세요. 예: $6:30 중앙 앉아서";
+            return false;
+        }
+
+        int separatorIndex = body.IndexOfAny([' ', '\t']);
+
+        if (separatorIndex <= 0)
+        {
+            error = "시간 뒤에 지시 내용을 입력하세요. 예: $6:30 중앙 앉아서";
+            return false;
+        }
+
+        string timeText = body[..separatorIndex].Trim();
+        string instruction = body[separatorIndex..].Trim();
+
+        if (string.IsNullOrWhiteSpace(instruction))
+        {
+            error = "지시 내용이 비어 있습니다.";
+            return false;
+        }
+
+        if (!TryParseRoundTime(
+                timeText,
+                out int deadlineRoundSeconds))
+        {
+            error = "시간 형식이 올바르지 않습니다. 예: $6:30 중앙 앉아서";
+            return false;
+        }
+
+        int remaining = GetRemainingRoundSeconds();
+
+        if (deadlineRoundSeconds < 0 ||
+            deadlineRoundSeconds >= remaining)
+        {
+            error = "선택한 시간이 현재 남은 라운드 시간보다 작아야 합니다.";
+            return false;
+        }
+
+        int minimumDeadline = Math.Max(
+            0,
+            _config.MinimumDeadlineSeconds);
+
+        if (deadlineRoundSeconds < minimumDeadline)
+        {
+            error = $"선택한 시간이 최소 시간 {FormatRoundTime(minimumDeadline)}보다 작습니다.";
+            return false;
+        }
+
+        State.SetTimed(
+            $"{FormatRoundTime(deadlineRoundSeconds)}까지 {instruction}",
+            deadlineRoundSeconds,
+            issuer.SteamID,
+            issuer.PlayerName);
+
+        _lastCommandAt[issuer.SteamID] =
+            DateTimeOffset.UtcNow;
+
+        BroadcastChat($"[간수 지시] {State.DisplayText}");
+        PlayNotificationSound();
+        StartHudTimer();
+
+        _logger.LogInformation(
+            "[Jailbreak] Dollar guard order issued. RawText: {RawText}, Deadline: {Deadline}, Instruction: {Instruction}, Issuer: {Issuer}, SteamID: {SteamId}",
+            text,
+            FormatRoundTime(deadlineRoundSeconds),
+            instruction,
+            issuer.PlayerName,
+            issuer.SteamID);
+
+        return true;
+    }
+
+    public bool SetExtraText(
+        CCSPlayerController issuer,
+        string rawText,
+        out string error)
+    {
+        error = string.Empty;
+
+        if (!_roundManager.State.IsActive)
+        {
+            error = "현재 활성화된 라운드가 없습니다.";
+            return false;
+        }
+
+        string text = rawText.Trim();
+
+        if (text.StartsWith('+'))
+        {
+            text = text[1..].Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            State.ClearExtra();
+            StartHudTimer();
+            BroadcastChat("[추가명령] 없음");
+            return true;
+        }
+
+        State.SetExtra(text);
+        StartHudTimer();
+        BroadcastChat($"[추가명령] {text}");
+
+        _logger.LogInformation(
+            "[Jailbreak] Extra guard order updated. Text: {Text}, Issuer: {Issuer}, SteamID: {SteamId}",
+            text,
+            issuer.PlayerName,
+            issuer.SteamID);
+
+        return true;
+    }
+
+    private static bool TryParseRoundTime(
+        string text,
+        out int seconds)
+    {
+        seconds = 0;
+        string trimmed = text.Trim();
+
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        int colonIndex = trimmed.IndexOf(':');
+
+        if (colonIndex >= 0)
+        {
+            string minuteText = trimmed[..colonIndex];
+            string secondText = trimmed[(colonIndex + 1)..];
+
+            if (!int.TryParse(
+                    minuteText,
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out int minutes) ||
+                !int.TryParse(
+                    secondText,
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out int parsedSeconds) ||
+                minutes < 0 ||
+                parsedSeconds < 0 ||
+                parsedSeconds >= 60)
+            {
+                return false;
+            }
+
+            seconds = (minutes * 60) + parsedSeconds;
+            return true;
+        }
+
+        if (!int.TryParse(
+                trimmed,
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out int value) ||
+            value < 0)
+        {
+            return false;
+        }
+
+        seconds = value >= 60
+            ? value
+            : value * 60;
+
+        return true;
+    }
+
     public bool Cancel(
         CCSPlayerController? issuer,
         string reason,
@@ -298,14 +493,12 @@ public sealed class GuardOrderManager
     {
         if (!State.IsActive)
         {
-            StopHudTimer();
             return false;
         }
 
         string previousText = State.DisplayText;
-        State.Clear();
-        StopHudTimer();
-        ClearHudForAll();
+        State.ClearPrimary();
+        StartHudTimer();
 
         if (announce)
         {
@@ -326,6 +519,7 @@ public sealed class GuardOrderManager
     public void Clear()
     {
         State.Clear();
+        _priorityHudText = string.Empty;
         _lastCommandAt.Clear();
         StopHudTimer();
         ClearHudForAll();
@@ -336,13 +530,25 @@ public sealed class GuardOrderManager
         RefreshHudState();
     }
 
-    private void RefreshHudState()
+    public void SetPriorityHud(string text)
     {
-        if (!State.IsActive)
+        _priorityHudText = text.Trim();
+        StartHudTimer();
+    }
+
+    public void ClearPriorityHud()
+    {
+        if (string.IsNullOrWhiteSpace(_priorityHudText))
         {
             return;
         }
 
+        _priorityHudText = string.Empty;
+        StartHudTimer();
+    }
+
+    private void RefreshHudState()
+    {
         if (!_roundManager.State.IsActive)
         {
             State.Clear();
@@ -351,8 +557,12 @@ public sealed class GuardOrderManager
             return;
         }
 
-        string text =
-            $"[간수 지시]\n{State.DisplayText}";
+        string text = string.IsNullOrWhiteSpace(_priorityHudText)
+            ? "[간수 지시]\n" +
+              $"자유시간: {GetHudLine(State.PrimaryText)}\n" +
+              $"추가명령: {GetHudLine(State.ExtraText)}\n" +
+              $"최근사건: {GetHudLine(_latestIncidentProvider())}"
+            : _priorityHudText;
 
         foreach (CCSPlayerController player
                  in Utilities.GetPlayers())
@@ -426,11 +636,6 @@ public sealed class GuardOrderManager
         _hudRevision++;
         _shownHudRevisionBySteamId.Clear();
 
-        if (!State.IsActive)
-        {
-            return;
-        }
-
         float refresh = Math.Clamp(
             _config.HudRefreshSeconds,
             0.25f,
@@ -452,6 +657,13 @@ public sealed class GuardOrderManager
     {
         _hudTimer?.Kill();
         _hudTimer = null;
+    }
+
+    private static string GetHudLine(string text)
+    {
+        return string.IsNullOrWhiteSpace(text)
+            ? "없음"
+            : text.Trim();
     }
 
     private void OpenTimeMenu(
@@ -714,6 +926,16 @@ public sealed class GuardOrderManager
     {
         if (string.IsNullOrWhiteSpace(
                 _config.NotificationSound))
+        {
+            return;
+        }
+
+        TimeSpan cooldown = TimeSpan.FromSeconds(
+            Math.Max(0, _config.NotificationSoundCooldownSeconds));
+
+        if (!_outputThrottleManager.TryAcquire(
+                "guard_order_notification_sound",
+                cooldown))
         {
             return;
         }
