@@ -6,7 +6,7 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v10.0": {
-      "Jailbreak/0.2.6": {
+      "Jailbreak/0.2.17": {
         "dependencies": {
           "CounterStrikeSharp.API": "1.0.369",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
@@ -527,7 +527,7 @@
     }
   },
   "libraries": {
-    "Jailbreak/0.2.6": {
+    "Jailbreak/0.2.17": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Update="CounterStrikeSharp.API" PrivateAssets="all" ExcludeAssets="runtime" />
+  </ItemGroup>
+</Project>

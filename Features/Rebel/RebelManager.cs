@@ -262,6 +262,15 @@ public sealed class RebelManager
         }
 
         state.SaveOriginalRenderColor(pawn.Render);
+
+        // 매초 도는 타이머에서 이미 반란자 색이면 재기록하지 않아
+        // 불필요한 네트워크 상태 변경을 피합니다. 리스폰으로 Render가
+        // 초기화되면 색이 달라져 자동으로 다시 적용됩니다.
+        if (pawn.Render == RebelRenderColor)
+        {
+            return;
+        }
+
         pawn.Render = RebelRenderColor;
 
         _logger.LogDebug(
