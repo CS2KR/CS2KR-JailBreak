@@ -8,7 +8,6 @@ using CounterStrikeSharp.API.Modules.Utils;
 using Jailbreak.Config;
 using Jailbreak.Core;
 using Jailbreak.Features.Countdown;
-using Jailbreak.Features.Duel;
 using Jailbreak.Features.Freeday;
 using Jailbreak.Features.Freekill;
 using Jailbreak.Features.Incidents;
@@ -45,7 +44,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     private RebelManager? _rebelManager;
     private FreedayManager? _freedayManager;
     private FreekillTimeManager? _freekillTimeManager;
-    private OneVsOneDuelManager? _oneVsOneDuelManager;
     private CountdownManager? _countdownManager;
     private IncidentLogManager? _incidentLogManager;
     private GuardOrderManager? _guardOrderManager;
@@ -202,7 +200,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _roundManager,
             Logger);
         _freekillTimeManager = new FreekillTimeManager();
-        _oneVsOneDuelManager = new OneVsOneDuelManager();
         _countdownManager = new CountdownManager(this, Logger);
         _incidentLogManager = new IncidentLogManager();
         _outputThrottleManager = new OutputThrottleManager();
@@ -346,9 +343,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             player,
             "전체 자유시간 시작",
             announce: false);
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        StopAutoFreedayTimer();
+        _freekillTimeManager?.Reset();        StopAutoFreedayTimer();
 
         if (_freedayManager?.StartGlobalFreeday() != true)
         {
@@ -959,7 +954,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             ?? 0;
 
         commandInfo.ReplyToCommand(
-            $" CS2.\x0BKR\x01｜ {roundState} / {freedayState} / 프리킬: {_freekillTimeManager?.StatusText ?? "없음"} / 1:1: {_oneVsOneDuelManager?.StatusText ?? "없음"} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / 카운트다운: {_countdownManager?.StatusText ?? "없음"}");
+            $" CS2.\x0BKR\x01｜ {roundState} / {freedayState} / 프리킬: {_freekillTimeManager?.StatusText ?? "없음"} / 개인 프리데이: {personalFreedayCount}명 / 반란자: {rebelCount}명 / {orderState} / 카운트다운: {_countdownManager?.StatusText ?? "없음"}");
 
         int alivePrisoners = 0;
         int aliveGuards = 0;
@@ -1946,9 +1941,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _freedayManager?.ClearPersonalFreedays(
             reason,
             announce: false);
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        _countdownManager?.Stop();
+        _freekillTimeManager?.Reset();        _countdownManager?.Stop();
         _guardOrderManager?.Cancel(null, reason, announce: false);
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
@@ -2188,9 +2181,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _freedayManager?.ClearPersonalFreedays(
             "라운드 시작",
             announce: false);
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        _countdownManager?.Stop();
+        _freekillTimeManager?.Reset();        _countdownManager?.Stop();
         _incidentLogManager?.Clear();
         _playerStateManager?.ResetRoundStates();
         _roundManager?.HandleRoundStart();
@@ -2229,9 +2220,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _freedayManager?.ClearPersonalFreedays(
             "라운드 종료",
             announce: false);
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        _countdownManager?.Stop();
+        _freekillTimeManager?.Reset();        _countdownManager?.Stop();
         _guardOrderManager?.Cancel(null, "라운드 종료", announce: false);
         StopFreedayHudTimer();
         _pendingFreekillEvaluationReasons.Clear();
@@ -2339,9 +2328,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _rebelManager?.RestoreAllRebels();
         _countdownManager?.Stop();
         _incidentLogManager?.Clear();
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        _playerStateManager?.Clear();
+        _freekillTimeManager?.Reset();        _playerStateManager?.Clear();
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
         _teamSwapManager?.Clear();
@@ -2375,9 +2362,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         // 맵이 끝나는 시점에 의미가 없고 다음 맵에서 상태가 새로 초기화됩니다.
         StopAutoFreedayTimer();
         StopFreedayHudTimer();
-        _freekillTimeManager?.Reset();
-        _oneVsOneDuelManager?.Reset();
-        _countdownManager?.Stop();
+        _freekillTimeManager?.Reset();        _countdownManager?.Stop();
         _guardOrderManager?.ResetForMapEnd();
         _awaitingCustomOrderInput.Clear();
         _teamSwapManager?.Clear();
@@ -2577,61 +2562,13 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
                 counts.AliveGuards,
                 counts.AlivePrisoners);
         }
-
-        EvaluateOneVsOneDuel(counts, reason);
-    }
-
-    private void EvaluateOneVsOneDuel(
-        JailAliveCounts counts,
-        string reason)
-    {
-        if (_oneVsOneDuelManager is null ||
-            _roundManager?.State.IsActive != true)
-        {
-            return;
-        }
-
-        if (_oneVsOneDuelManager.Evaluate(
-                counts.AlivePrisoners,
-                counts.AliveGuards,
-                counts.LastPrisonerSteamId,
-                counts.LastGuardSteamId,
-                counts.LastPrisonerName,
-                counts.LastGuardName,
-                out bool ended))
-        {
-            string participantText =
-                _oneVsOneDuelManager.GetParticipantText();
-
-            BroadcastChat($" CS2.\x0BKR\x01｜ 1:1 상황입니다. {participantText}");
-            AddIncident($"1:1 상황이 시작되었습니다. {participantText}");
-
-            Logger.LogInformation(
-                "[CS2.KR] One-vs-one duel started. Reason: {Reason}, Prisoner: {Prisoner}, Guard: {Guard}",
-                reason,
-                counts.LastPrisonerName,
-                counts.LastGuardName);
-        }
-        else if (ended)
-        {
-            AddIncident("1:1 상황이 종료되었습니다.");
-
-            Logger.LogInformation(
-                "[CS2.KR] One-vs-one duel ended. Reason: {Reason}, AliveGuards: {AliveGuards}, AlivePrisoners: {AlivePrisoners}",
-                reason,
-                counts.AliveGuards,
-                counts.AlivePrisoners);
-        }
     }
 
     private static JailAliveCounts GetAliveCounts()
     {
         int alivePrisoners = 0;
         int aliveGuards = 0;
-        string? lastPrisonerName = null;
         string? lastGuardName = null;
-        ulong lastPrisonerSteamId = 0;
-        ulong lastGuardSteamId = 0;
 
         foreach (CCSPlayerController player in Utilities.GetPlayers())
         {
@@ -2644,24 +2581,18 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             if (TeamManager.IsPrisoner(player))
             {
                 alivePrisoners++;
-                lastPrisonerName = player.PlayerName;
-                lastPrisonerSteamId = player.SteamID;
             }
             else if (TeamManager.IsGuard(player))
             {
                 aliveGuards++;
                 lastGuardName = player.PlayerName;
-                lastGuardSteamId = player.SteamID;
             }
         }
 
         return new JailAliveCounts(
             alivePrisoners,
             aliveGuards,
-            lastPrisonerName,
-            lastGuardName,
-            lastPrisonerSteamId,
-            lastGuardSteamId);
+            lastGuardName);
     }
 
     private static void BroadcastChat(string message)
@@ -2689,9 +2620,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     private sealed record JailAliveCounts(
         int AlivePrisoners,
         int AliveGuards,
-        string? LastPrisonerName,
-        string? LastGuardName,
-        ulong LastPrisonerSteamId,
-        ulong LastGuardSteamId);
+        string? LastGuardName);
 
 }
