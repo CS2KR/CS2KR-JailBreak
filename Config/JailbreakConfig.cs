@@ -35,45 +35,8 @@ public sealed class JailbreakConfig : BasePluginConfig
     [JsonPropertyName("TeamSwapDeclineCooldownSeconds")]
     public int TeamSwapDeclineCooldownSeconds { get; set; } = 60;
 
-    [JsonPropertyName("Beacon")]
-    public BeaconConfig Beacon { get; set; } = new();
-
     [JsonPropertyName("GuardOrders")]
     public GuardOrderConfig GuardOrders { get; set; } = new();
-}
-
-public sealed class BeaconConfig
-{
-    [JsonPropertyName("Enabled")]
-    public bool Enabled { get; set; }
-
-    [JsonPropertyName("IntervalSeconds")]
-    public float IntervalSeconds { get; set; } = 3.0f;
-
-    [JsonPropertyName("RadiusUnits")]
-    public float RadiusUnits { get; set; } = 90.0f;
-
-    [JsonPropertyName("SegmentCount")]
-    public int SegmentCount { get; set; } = 18;
-
-    [JsonPropertyName("Width")]
-    public float Width { get; set; } = 2.0f;
-
-    [JsonPropertyName("HeightOffset")]
-    public float HeightOffset { get; set; } = 8.0f;
-
-    [JsonPropertyName("Colors")]
-    public List<string> Colors { get; set; } =
-    [
-        "#FF3333",
-        "#FFCC33",
-        "#33FF66",
-        "#33CCFF",
-        "#CC66FF"
-    ];
-
-    [JsonPropertyName("Sound")]
-    public string Sound { get; set; } = string.Empty;
 }
 
 public sealed class GuardOrderConfig

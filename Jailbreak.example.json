@@ -11,22 +11,6 @@
   "AutoFreedayDurationSeconds": 180,
   "TeamSwapRequestTimeoutSeconds": 20,
   "TeamSwapDeclineCooldownSeconds": 60,
-  "Beacon": {
-    "Enabled": false,
-    "IntervalSeconds": 3.0,
-    "RadiusUnits": 90.0,
-    "SegmentCount": 18,
-    "Width": 2.0,
-    "HeightOffset": 8.0,
-    "Colors": [
-      "#FF3333",
-      "#FFCC33",
-      "#33FF66",
-      "#33CCFF",
-      "#CC66FF"
-    ],
-    "Sound": ""
-  },
   "GuardOrders": {
     "Enabled": true,
     "RoundDurationSeconds": 480,

@@ -7,7 +7,6 @@ using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
 using Jailbreak.Config;
 using Jailbreak.Core;
-using Jailbreak.Features.Beacon;
 using Jailbreak.Features.Countdown;
 using Jailbreak.Features.Duel;
 using Jailbreak.Features.Freeday;
@@ -47,7 +46,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
     private FreedayManager? _freedayManager;
     private FreekillTimeManager? _freekillTimeManager;
     private OneVsOneDuelManager? _oneVsOneDuelManager;
-    private BeaconManager? _beaconManager;
     private CountdownManager? _countdownManager;
     private IncidentLogManager? _incidentLogManager;
     private GuardOrderManager? _guardOrderManager;
@@ -106,44 +104,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         {
             config.TeamSwapDeclineCooldownSeconds = 0;
         }
-
-        config.Beacon ??= new BeaconConfig();
-
-        if (config.Beacon.IntervalSeconds < 1.0f)
-        {
-            config.Beacon.IntervalSeconds = 3.0f;
-        }
-
-        if (config.Beacon.RadiusUnits < 16.0f)
-        {
-            config.Beacon.RadiusUnits = 90.0f;
-        }
-
-        if (config.Beacon.SegmentCount < 8)
-        {
-            config.Beacon.SegmentCount = 18;
-        }
-
-        if (config.Beacon.Width < 1.0f)
-        {
-            config.Beacon.Width = 2.0f;
-        }
-
-        if (config.Beacon.HeightOffset < 0.0f)
-        {
-            config.Beacon.HeightOffset = 8.0f;
-        }
-
-        config.Beacon.Colors =
-            (config.Beacon.Colors ?? [])
-                .Where(color => !string.IsNullOrWhiteSpace(color))
-                .Select(color => color.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-        config.Beacon.Sound =
-            config.Beacon.Sound?.Trim()
-            ?? string.Empty;
 
         config.GuardOrders ??= new GuardOrderConfig();
 
@@ -214,7 +174,7 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         Config = config;
 
         Logger.LogInformation(
-            "[Jailbreak] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, AutoFreedayEnabled: {AutoFreedayEnabled}, AutoFreedayDurationSeconds: {AutoFreedayDurationSeconds}, TeamSwapRequestTimeoutSeconds: {TeamSwapRequestTimeoutSeconds}, TeamSwapDeclineCooldownSeconds: {TeamSwapDeclineCooldownSeconds}, BeaconEnabled: {BeaconEnabled}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
+            "[Jailbreak] Configuration loaded. PrisonersPerGuard: {PrisonersPerGuard}, DisableRadar: {DisableRadar}, DisableRadarCommand: {DisableRadarCommand}, AutoFreedayEnabled: {AutoFreedayEnabled}, AutoFreedayDurationSeconds: {AutoFreedayDurationSeconds}, TeamSwapRequestTimeoutSeconds: {TeamSwapRequestTimeoutSeconds}, TeamSwapDeclineCooldownSeconds: {TeamSwapDeclineCooldownSeconds}, GuardOrdersEnabled: {Enabled}, RoundDurationSeconds: {RoundDurationSeconds}, TimeStepSeconds: {TimeStepSeconds}",
             Config.PrisonersPerGuard,
             Config.DisableRadar,
             Config.DisableRadarCommand,
@@ -222,7 +182,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             Config.AutoFreedayDurationSeconds,
             Config.TeamSwapRequestTimeoutSeconds,
             Config.TeamSwapDeclineCooldownSeconds,
-            Config.Beacon.Enabled,
             Config.GuardOrders.Enabled,
             Config.GuardOrders.RoundDurationSeconds,
             Config.GuardOrders.TimeStepSeconds);
@@ -244,7 +203,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             Logger);
         _freekillTimeManager = new FreekillTimeManager();
         _oneVsOneDuelManager = new OneVsOneDuelManager();
-        _beaconManager = new BeaconManager(this, Config.Beacon, Logger);
         _countdownManager = new CountdownManager(this, Logger);
         _incidentLogManager = new IncidentLogManager();
         _outputThrottleManager = new OutputThrottleManager();
@@ -390,7 +348,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             announce: false);
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.Stop();
         StopAutoFreedayTimer();
 
         if (_freedayManager?.StartGlobalFreeday() != true)
@@ -1991,7 +1948,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             announce: false);
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.Stop();
         _countdownManager?.Stop();
         _guardOrderManager?.Cancel(null, reason, announce: false);
         _guardOrderManager?.Clear();
@@ -2234,7 +2190,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             announce: false);
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.Stop();
         _countdownManager?.Stop();
         _incidentLogManager?.Clear();
         _playerStateManager?.ResetRoundStates();
@@ -2386,7 +2341,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _incidentLogManager?.Clear();
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.Stop();
         _playerStateManager?.Clear();
         _guardOrderManager?.Clear();
         _awaitingCustomOrderInput.Clear();
@@ -2423,7 +2377,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         StopFreedayHudTimer();
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.ResetForMapEnd();
         _countdownManager?.Stop();
         _guardOrderManager?.ResetForMapEnd();
         _awaitingCustomOrderInput.Clear();
@@ -2650,9 +2603,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             string participantText =
                 _oneVsOneDuelManager.GetParticipantText();
 
-            _beaconManager?.StartOneVsOne(
-                counts.LastPrisonerSteamId,
-                counts.LastGuardSteamId);
             BroadcastChat($"[Jailbreak] 1:1 상황입니다. {participantText}");
             AddIncident($"1:1 상황이 시작되었습니다. {participantText}");
 
@@ -2664,7 +2614,6 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         }
         else if (ended)
         {
-            _beaconManager?.Stop();
             AddIncident("1:1 상황이 종료되었습니다.");
 
             Logger.LogInformation(
