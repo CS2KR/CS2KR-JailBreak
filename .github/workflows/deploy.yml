@@ -1,0 +1,81 @@
+name: Build & Deploy to CS2 (main)
+
+# main 이 갱신되면 Release 빌드 후 Pterodactyl API로 플러그인 파일만 업로드한다.
+# 서버 재시작/전원조작은 하지 않는다 — CounterStrikeSharp 가 DLL 교체 시 핫리로드한다.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+      - "scripts/**"
+      - ".gitignore"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+env:
+  PTERO_URL: https://pterodactyl.xiu.kr
+  # 클라이언트 식별자(패널에서 서버 열었을 때 URL /server/<id>). 볼륨 UUID ad084b8a-... 의 앞 8자.
+  PTERO_SERVER_ID: ad084b8a
+  PLUGIN_DIR: /game/csgo/addons/counterstrikesharp/plugins/Jailbreak
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build (Release)
+        run: dotnet build -c Release
+
+      - name: Package plugin artifacts
+        run: |
+          set -euo pipefail
+          cd bin/Release/net10.0
+          zip -r "$GITHUB_WORKSPACE/Jailbreak.zip" \
+            Jailbreak.dll Jailbreak.deps.json Jailbreak.pdb lang
+          ls -la "$GITHUB_WORKSPACE/Jailbreak.zip"
+
+      - name: Deploy via Pterodactyl API
+        env:
+          PTERO_API_KEY: ${{ secrets.PTERO_API_KEY }}
+        run: |
+          set -euo pipefail
+          API="$PTERO_URL/api/client/servers/$PTERO_SERVER_ID"
+          AUTH=(-H "Authorization: Bearer $PTERO_API_KEY" -H "Accept: application/json")
+          JSON=(-H "Content-Type: application/json")
+          PARENT=$(dirname "$PLUGIN_DIR")
+          LEAF=$(basename "$PLUGIN_DIR")
+          ENC_DIR=$(jq -rn --arg d "$PLUGIN_DIR" '$d|@uri')
+
+          echo "::group::Preflight — verify server"
+          NAME=$(curl -fsS "${AUTH[@]}" "$API" | jq -r '.attributes.name')
+          echo "Target: $NAME ($PTERO_SERVER_ID)"
+          echo "::endgroup::"
+
+          echo "Ensuring plugin folder exists"
+          curl -fsS -X POST "${AUTH[@]}" "${JSON[@]}" "$API/files/create-folder" \
+            -d "{\"root\":\"$PARENT\",\"name\":\"$LEAF\"}" || true
+
+          echo "Requesting signed upload URL"
+          UPLOAD_URL=$(curl -fsS "${AUTH[@]}" "$API/files/upload" | jq -r '.attributes.url')
+
+          echo "Uploading archive"
+          curl -fsS -X POST "${UPLOAD_URL}&directory=${ENC_DIR}" -F "files=@Jailbreak.zip"
+
+          echo "Decompressing on server"
+          curl -fsS -X POST "${AUTH[@]}" "${JSON[@]}" "$API/files/decompress" \
+            -d "{\"root\":\"$PLUGIN_DIR\",\"file\":\"Jailbreak.zip\"}"
+
+          echo "Removing uploaded archive"
+          curl -fsS -X POST "${AUTH[@]}" "${JSON[@]}" "$API/files/delete" \
+            -d "{\"root\":\"$PLUGIN_DIR\",\"files\":[\"Jailbreak.zip\"]}"
+
+          echo "Deploy complete → ${NAME}:${PLUGIN_DIR}"
