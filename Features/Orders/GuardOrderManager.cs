@@ -525,6 +525,17 @@ public sealed class GuardOrderManager
         ClearHudForAll();
     }
 
+    // map_end 전용: 맵/엔티티가 언로드되는 중이라 ClearHudForAll의 GetPlayers
+    // 조회가 네이티브 크래시를 내므로, 엔티티를 만지지 않고 지시 상태와
+    // 타이머만 리셋합니다. HUD는 맵이 끝나는 시점에 지울 필요가 없습니다.
+    public void ResetForMapEnd()
+    {
+        State.Clear();
+        _lastCommandAt.Clear();
+        StopHudTimer();
+        _shownHudRevisionBySteamId.Clear();
+    }
+
     public void DisplayHud()
     {
         RefreshHudState();

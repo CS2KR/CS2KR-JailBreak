@@ -91,6 +91,15 @@ public sealed class BeaconManager
         ClearBeams();
     }
 
+    public void ResetForMapEnd()
+    {
+        _timer?.Kill();
+        _timer = null;
+        _prisonerSteamId = 0;
+        _guardSteamId = 0;
+        _activeBeams.Clear();
+    }
+
     private void DrawBeacons()
     {
         ClearBeams();

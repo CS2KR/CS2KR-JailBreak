@@ -322,7 +322,16 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         StopFreedayHudTimer();
         StopRebelColorTimer();
 
-        _rebelManager?.RestoreAllRebels();
+        // 핫리로드처럼 맵이 로드된 상태에서는 반란자 색·지시 HUD를 정상
+        // 복원하지만, 맵 언로드와 겹친 시점(MapName=null)엔 엔티티 조회가
+        // 네이티브 크래시를 내므로 엔티티를 만지지 않는 리셋만 수행합니다.
+        bool worldLoaded = !string.IsNullOrEmpty(Server.MapName);
+
+        if (worldLoaded)
+        {
+            _rebelManager?.RestoreAllRebels();
+        }
+
         _roundManager?.Shutdown();
         _roundManager = null;
 
@@ -333,14 +342,16 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
         _teamSwapManager = null;
         _rebelManager = null;
         _freedayManager = null;
-        _freekillTimeManager = null;
-        _oneVsOneDuelManager = null;
-        _beaconManager?.Stop();
-        _beaconManager = null;
-        _countdownManager?.Stop();
-        _countdownManager = null;
-        _incidentLogManager = null;
-        _guardOrderManager?.Clear();
+
+        if (worldLoaded)
+        {
+            _guardOrderManager?.Clear();
+        }
+        else
+        {
+            _guardOrderManager?.ResetForMapEnd();
+        }
+
         _guardOrderManager = null;
         _outputThrottleManager?.Clear();
         _outputThrottleManager = null;
@@ -2402,16 +2413,19 @@ public sealed class JailbreakPlugin : BasePlugin, IPluginConfig<JailbreakConfig>
             _pluginInstanceId,
             Server.MapName);
 
-        LogGameRulesDiagnostics("listener map_end before cleanup");
-
+        // map_end 시점엔 맵/엔티티가 이미 언로드되는 중이라(MapName=null) 엔티티
+        // 조회가 네이티브 크래시(try/catch로도 못 잡음)를 일으켜 서버가 죽었습니다.
+        // GameRules 진단, RestoreAllRebels/GuardOrder HUD 정리(GetPlayers), 비콘
+        // 엔티티 제거를 모두
+        // 제거하고, 타이머 정지와 메모리 상태 리셋만 수행합니다. pawn 색·HUD 복원은
+        // 맵이 끝나는 시점에 의미가 없고 다음 맵에서 상태가 새로 초기화됩니다.
         StopAutoFreedayTimer();
         StopFreedayHudTimer();
-        _rebelManager?.RestoreAllRebels();
         _freekillTimeManager?.Reset();
         _oneVsOneDuelManager?.Reset();
-        _beaconManager?.Stop();
+        _beaconManager?.ResetForMapEnd();
         _countdownManager?.Stop();
-        _guardOrderManager?.Clear();
+        _guardOrderManager?.ResetForMapEnd();
         _awaitingCustomOrderInput.Clear();
         _teamSwapManager?.Clear();
         _roundManager?.HandleMapEnd();
